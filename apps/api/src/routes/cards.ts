@@ -11,7 +11,7 @@ import { Hono } from 'hono';
 import { HTTPException } from 'hono/http-exception';
 import { db } from '../db/index.js';
 import { zValidator } from '../middleware/validate.js';
-import { computeCardPosition } from '../services/positions.js';
+import { appendCardPosition, computeCardPosition } from '../services/positions.js';
 
 const { cards, columns } = schema;
 
@@ -19,13 +19,17 @@ export const cardsRoute = new Hono()
   .post('/', zValidator('json', CreateCardInputSchema), (c) => {
     const input = c.req.valid('json');
 
-    const column = db.select({ id: columns.id }).from(columns).where(eq(columns.id, input.columnId)).get();
-    if (!column) throw new HTTPException(404, { message: 'column not found' });
+    const result = db.transaction((tx) => {
+      const column = tx.select({ id: columns.id }).from(columns).where(eq(columns.id, input.columnId)).get();
+      if (!column) throw new HTTPException(404, { message: 'column not found' });
 
-    const [inserted] = db.insert(cards).values(input).returning().all();
-    if (!inserted) throw new HTTPException(500, { message: 'insert failed' });
+      const position = appendCardPosition(tx, input.columnId);
+      const [inserted] = tx.insert(cards).values({ ...input, position }).returning().all();
+      return inserted;
+    });
 
-    return c.json(CardSchema.parse(inserted), 201);
+    if (!result) throw new HTTPException(500, { message: 'insert failed' });
+    return c.json(CardSchema.parse(result), 201);
   })
   .patch('/:id', zValidator('json', UpdateCardInputSchema), (c) => {
     const id = c.req.param('id');

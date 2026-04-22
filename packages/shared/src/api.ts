@@ -51,7 +51,6 @@ export const CreateCardInputSchema = z.object({
   columnId: z.string().uuid(),
   title,
   description: description.optional(),
-  position,
 });
 export type CreateCardInput = z.infer<typeof CreateCardInputSchema>;
 
@@ -81,14 +80,16 @@ export type ReorderCardInput = z.infer<typeof ReorderCardInputSchema>;
 export const CreateColumnInputSchema = z.object({
   boardId: z.string().uuid(),
   name: title,
-  position,
 });
 export type CreateColumnInput = z.infer<typeof CreateColumnInputSchema>;
 
 export const UpdateColumnInputSchema = z.object({ name: title });
 export type UpdateColumnInput = z.infer<typeof UpdateColumnInputSchema>;
 
-export const ReorderColumnInputSchema = z.object({ position });
+export const ReorderColumnInputSchema = z.object({
+  beforeColumnId: z.string().uuid().nullish(),
+  afterColumnId: z.string().uuid().nullish(),
+});
 export type ReorderColumnInput = z.infer<typeof ReorderColumnInputSchema>;
 
 export const CreateTagInputSchema = createInsertSchema(tags, {

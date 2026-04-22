@@ -10,6 +10,7 @@ import { requestId } from './middleware/requestId.js';
 import { requestLogger } from './middleware/requestLogger.js';
 import { boardRoute } from './routes/board.js';
 import { cardsRoute } from './routes/cards.js';
+import { columnsRoute } from './routes/columns.js';
 
 runMigrations();
 await seed();
@@ -28,6 +29,7 @@ app.get('/health', (c) => c.json({ ok: true }));
 
 app.route('/api/board', boardRoute);
 app.route('/api/cards', cardsRoute);
+app.route('/api/columns', columnsRoute);
 
 app.notFound((c) =>
   c.json({ error: { code: 'NOT_FOUND', message: `No route for ${c.req.method} ${c.req.path}` } }, 404),
