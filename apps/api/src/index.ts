@@ -10,6 +10,6 @@ await seed();
 
 const app = createApp();
 
-serve({ fetch: app.fetch, port: env.PORT }, (info) => {
-  logger.info({ port: info.port }, 'api listening');
+serve({ fetch: app.fetch, port: env.PORT, hostname: '0.0.0.0' }, (info) => {
+  logger.info({ port: info.port, hostname: '0.0.0.0' }, 'api listening');
 });
