@@ -37,4 +37,11 @@ This is what the UI needs. Splitting into `/columns` and `/cards` would multiply
 
 ## How I used AI
 
-Planned & built with Claude. We had a lot of back & forth in the planning phases. Rather than planning the entire project at once, I decided to do several separate plans - take everything into consideration for each phase, but still focus on one commit at a time. See the commit history for how I sliced the project. Also check out the claude memory files
+Planned & built with Claude. We had a lot of back & forth in the planning phases. Rather than planning the entire project at once, I decided to do several separate plans - take everything into consideration for each phase, but still focus on one commit at a time. See the commit history for how I sliced the project.
+
+After the initial scaffold, I asked Claude to make actionable GitHub Issues because it’s a workflow that’s working well for me with https://nubium.rocks
+
+### Skills
+
+- `/fix` - this is handy for fixing/testing bugs as they arise. It creates an issue, fixes it, and tells me repro steps so I can confirm that it's fixed.
+- `/next` - looks at the GitHub issues and starts a conversation about what we should do next
