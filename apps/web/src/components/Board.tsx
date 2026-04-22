@@ -77,6 +77,7 @@ export function Board() {
   const [filter, setFilter] = useState<Filter>(emptyFilter);
   const [groupBy, setGroupBy] = useState<GroupBy>('none');
   const [activeCard, setActiveCard] = useState<CardWithRelations | null>(null);
+  const [activeColumn, setActiveColumn] = useState<ColumnWithCards | null>(null);
   const reorderCard = useReorderCard();
   const moveCard = useMoveCard();
   const reorderColumn = useReorderColumn();
@@ -136,16 +137,21 @@ export function Board() {
   function handleDragStart(event: DragStartEvent) {
     const { active } = event;
     const activeData = active.data.current as { type?: string } | undefined;
-    if (activeData?.type !== 'card') {
-      setActiveCard(null);
-      return;
+    setActiveCard(null);
+    setActiveColumn(null);
+
+    if (activeData?.type === 'card') {
+      const card = data?.columns.flatMap((c) => c.cards).find((c) => c.id === String(active.id));
+      setActiveCard(card ?? null);
+    } else if (activeData?.type === 'column') {
+      const column = data?.columns.find((c) => c.id === String(active.id));
+      setActiveColumn(column ?? null);
     }
-    const card = data?.columns.flatMap((c) => c.cards).find((c) => c.id === String(active.id));
-    setActiveCard(card ?? null);
   }
 
   function handleDragEnd(event: DragEndEvent) {
     setActiveCard(null);
+    setActiveColumn(null);
     const { active, over } = event;
     if (!over || active.id === over.id) return;
 
@@ -293,7 +299,10 @@ export function Board() {
           collisionDetection={closestCorners}
           onDragStart={handleDragStart}
           onDragEnd={handleDragEnd}
-          onDragCancel={() => setActiveCard(null)}
+          onDragCancel={() => {
+            setActiveCard(null);
+            setActiveColumn(null);
+          }}
         >
           <SortableContext
             items={columns.map((c) => c.id)}
@@ -315,6 +324,10 @@ export function Board() {
             {activeCard ? (
               <div className="rotate-2">
                 <Card card={activeCard} onClick={() => undefined} readOnly />
+              </div>
+            ) : activeColumn ? (
+              <div className="rotate-1">
+                <Column column={activeColumn} onSelectCard={() => undefined} readOnly />
               </div>
             ) : null}
           </DragOverlay>
