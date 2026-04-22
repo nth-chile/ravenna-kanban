@@ -1,11 +1,16 @@
 import { serve } from '@hono/node-server';
 import { PingSchema } from '@ravenna/shared';
 import { Hono } from 'hono';
+import { runMigrations } from './db/migrate.js';
+import { seed } from './db/seed.js';
 import { env } from './env.js';
 import { logger } from './logger.js';
 import { errorHandler } from './middleware/error.js';
 import { requestId } from './middleware/requestId.js';
 import { requestLogger } from './middleware/requestLogger.js';
+
+runMigrations();
+await seed();
 
 const app = new Hono();
 

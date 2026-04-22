@@ -10,8 +10,13 @@ coverage
 .vite
 *.sqlite
 *.sqlite-journal
+*.sqlite-shm
+*.sqlite-wal
 *.db
 *.db-journal
-/data
-/uploads
+*.db-shm
+*.db-wal
+data/
+uploads/
 NOTES.md
+.claude/settings.local.json
