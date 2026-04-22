@@ -56,7 +56,7 @@ Things a reviewer won't notice by clicking around:
 - **Soft delete** on cards (`deleted_at` + `POST /cards/:id/restore`)
 - **Optimistic updates with rollback** - React Query snapshots the cache in `onMutate`, rolls back on failure
 - **Concurrency-safe reordering** - fractional indexing means two clients moving the same card never clobber each other
-- **Optimistic concurrency on move/reorder** - client sends the card's `updatedAt`; server rejects with `409 CONFLICT` if another write has landed since. Second-drag-within-~100ms flickers; for a single-user app that beats stale writes.
+- **Optimistic concurrency on move/reorder** - client sends the card's `updatedAt`; server rejects with `409 CONFLICT` if another write has landed since. If you drag the same card twice within ~100ms you can get a flicker, which is fine - beats stale writes.
 - **API integration tests** - 13 route tests against a fresh DB (`pnpm --filter api test`)
 
 ## State management
@@ -92,11 +92,11 @@ All routes under `/api`, JSON in/out, Zod-validated with a consistent error shap
 
 `pnpm -r test` runs everything (Vitest).
 
-13 integration tests in `apps/api` that boot the Hono app against an in-memory SQLite and drive it with real requests - board shape, card CRUD, move, reorder, filters, search, soft-delete+restore, the 409 conflict path. Where I leaned on the hot server routes I leaned on tests too.
+13 integration tests in `apps/api` boot the Hono app against an in-memory SQLite and drive it with real requests - board shape, card CRUD, move, reorder, filters, search, soft-delete+restore, the 409 conflict path. The API is where most of the real logic lives, so that's where most of the coverage is.
 
-`packages/shared` has 8 small unit tests on the fractional-index math because that code is pure and trivial to lock down.
+`packages/shared` has 8 unit tests on the fractional-index math - it's pure and easy to cover exhaustively.
 
-Component tests in `apps/web` are thin on purpose (2 - optimistic rollback, form validation). Manual click-through got the UI; automated UI testing wasn't going to catch the things that mattered (drag-and-drop, focus trap, responsive).
+Component tests in `apps/web` are thin on purpose (2 - optimistic rollback, form validation). I tested the UI by clicking through it; automated UI tests wouldn't catch what actually mattered here (drag-and-drop feel, focus trap, responsive behavior).
 
 ## Decisions and tradeoffs
 
@@ -106,7 +106,7 @@ By using floats for card/column positions instead of integers, reordering can be
 
 ### Single `GET /api/board` endpoint
 
-This is what the UI needs. Splitting into `/columns` and `/cards` would multiply round trips. For large boards, `@tanstack/react-virtual` keeps only on-screen cards in the DOM so the aggregate payload stays cheap to render.
+This is what the UI needs. Splitting into `/columns` and `/cards` would multiply round trips. For big boards, `@tanstack/react-virtual` only renders the cards you can actually see, so sending everything in one response doesn't bog the page down.
 
 ## How I used AI
 
