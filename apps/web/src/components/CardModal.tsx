@@ -73,6 +73,13 @@ export function CardModal({ card, allTags, onClose }: Props) {
     [allTags, attachedTagIds],
   );
 
+  function handleSaveShortcut(e: React.KeyboardEvent) {
+    if (e.key === 'Enter' && (e.metaKey || e.ctrlKey) && title.trim()) {
+      e.preventDefault();
+      onSave();
+    }
+  }
+
   async function onSave() {
     const titleTrim = title.trim();
     if (!titleTrim) return;
@@ -144,6 +151,7 @@ export function CardModal({ card, allTags, onClose }: Props) {
               setTitle(e.target.value);
               if (update.isError) update.reset();
             }}
+            onKeyDown={handleSaveShortcut}
             className="h-9 text-base font-medium"
             aria-invalid={update.isError || undefined}
           />
@@ -163,6 +171,7 @@ export function CardModal({ card, allTags, onClose }: Props) {
               setDescription(e.target.value);
               if (update.isError) update.reset();
             }}
+            onKeyDown={handleSaveShortcut}
             rows={5}
             aria-invalid={update.isError || undefined}
           />
