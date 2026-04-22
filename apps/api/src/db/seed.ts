@@ -119,5 +119,19 @@ export async function seed() {
         { cardId: search.id, body: 'FTS5 is worth it. LIKE is too slow once the board grows.' },
       ])
       .run();
+
+    const bulk = Number(process.env.SEED_LARGE_COLUMN ?? 0);
+    if (bulk > 0) {
+      tx.insert(cards)
+        .values(
+          Array.from({ length: bulk }, (_, i) => ({
+            columnId: backlog.id,
+            title: `Load test card ${i + 1}`,
+            description: i % 5 === 0 ? `Synthetic card #${i + 1} for virtualization testing.` : '',
+            position: 100 + i,
+          })),
+        )
+        .run();
+    }
   });
 }

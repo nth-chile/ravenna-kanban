@@ -1,9 +1,13 @@
 import { SortableContext, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import type { CardWithRelations, ColumnWithCards, Tag } from '@ravenna/shared';
+import { useVirtualizer } from '@tanstack/react-virtual';
+import { type RefObject, useRef } from 'react';
 import { AddCardInline } from './AddCardInline.js';
 import { Card } from './Card.js';
 import { Badge } from './ui/badge.js';
+
+const VIRTUALIZE_THRESHOLD = 100;
 
 type Props = {
   column: ColumnWithCards;
@@ -128,6 +132,9 @@ function SortableColumn({
     opacity: isDragging ? 0.5 : 1,
   };
 
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const virtualize = !groupByTag && count > VIRTUALIZE_THRESHOLD;
+
   return (
     <section
       ref={setNodeRef}
@@ -152,11 +159,13 @@ function SortableColumn({
         </Badge>
       </header>
 
-      <div className="flex-1 space-y-2 overflow-y-auto px-3 pb-3">
+      <div ref={scrollRef} className="flex-1 space-y-2 overflow-y-auto px-3 pb-3">
         {groupByTag ? (
           count > 0 && (
             <CardsByTag cards={column.cards} tags={groupByTag} onSelectCard={onSelectCard} />
           )
+        ) : virtualize ? (
+          <VirtualCards cards={column.cards} scrollRef={scrollRef} onSelectCard={onSelectCard} />
         ) : (
           <SortableContext
             items={column.cards.map((c) => c.id)}
@@ -170,5 +179,52 @@ function SortableColumn({
         <AddCardInline columnId={column.id} />
       </div>
     </section>
+  );
+}
+
+function VirtualCards({
+  cards,
+  scrollRef,
+  onSelectCard,
+}: {
+  cards: CardWithRelations[];
+  scrollRef: RefObject<HTMLDivElement | null>;
+  onSelectCard: (card: CardWithRelations) => void;
+}) {
+  const virtualizer = useVirtualizer({
+    count: cards.length,
+    getScrollElement: () => scrollRef.current,
+    estimateSize: () => 96,
+    overscan: 20,
+    getItemKey: (index) => cards[index]!.id,
+  });
+
+  const items = virtualizer.getVirtualItems();
+
+  return (
+    <SortableContext items={cards.map((c) => c.id)} strategy={verticalListSortingStrategy}>
+      <div style={{ height: virtualizer.getTotalSize(), position: 'relative', width: '100%' }}>
+        {items.map((vi) => {
+          const card = cards[vi.index]!;
+          return (
+            <div
+              key={card.id}
+              data-index={vi.index}
+              ref={virtualizer.measureElement}
+              style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                width: '100%',
+                transform: `translateY(${vi.start}px)`,
+                paddingBottom: 8,
+              }}
+            >
+              <Card card={card} onClick={() => onSelectCard(card)} />
+            </div>
+          );
+        })}
+      </div>
+    </SortableContext>
   );
 }
