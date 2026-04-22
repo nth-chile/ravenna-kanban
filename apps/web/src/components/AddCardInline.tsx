@@ -1,5 +1,8 @@
+import { Plus } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useCreateCard } from '../hooks/use-card-mutations.js';
+import { Button } from './ui/button.js';
+import { Input } from './ui/input.js';
 
 export function AddCardInline({ columnId }: { columnId: string }) {
   const [open, setOpen] = useState(false);
@@ -25,16 +28,16 @@ export function AddCardInline({ columnId }: { columnId: string }) {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="w-full rounded border border-dashed border-border px-3 py-2 text-sm text-fg-muted hover:border-fg-muted hover:text-fg"
+        className="flex w-full items-center justify-center gap-1 rounded border border-dashed border-border px-3 py-2 text-sm text-fg-muted transition hover:border-fg-muted hover:text-fg focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
       >
-        + Add card
+        <Plus className="h-3.5 w-3.5" /> Add card
       </button>
     );
   }
 
   return (
     <form onSubmit={onSubmit} className="flex flex-col gap-2">
-      <input
+      <Input
         ref={inputRef}
         value={title}
         onChange={(e) => setTitle(e.target.value)}
@@ -45,26 +48,22 @@ export function AddCardInline({ columnId }: { columnId: string }) {
           }
         }}
         placeholder="Card title"
-        className="rounded border border-border bg-surface px-2 py-1 text-sm text-fg focus:border-fg-muted focus:outline-none"
       />
       <div className="flex gap-2">
-        <button
-          type="submit"
-          disabled={create.isPending || !title.trim()}
-          className="rounded bg-accent px-3 py-1 text-sm text-accent-fg hover:opacity-90 disabled:opacity-50"
-        >
+        <Button type="submit" size="sm" disabled={create.isPending || !title.trim()}>
           {create.isPending ? 'Adding…' : 'Add'}
-        </button>
-        <button
+        </Button>
+        <Button
           type="button"
+          variant="ghost"
+          size="sm"
           onClick={() => {
             setOpen(false);
             setTitle('');
           }}
-          className="rounded px-3 py-1 text-sm text-fg-muted hover:text-fg"
         >
           Cancel
-        </button>
+        </Button>
       </div>
     </form>
   );

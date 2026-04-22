@@ -1,4 +1,7 @@
 import type { Tag } from '@ravenna/shared';
+import { badgeVariants } from './ui/badge.js';
+import { Button } from './ui/button.js';
+import { Input } from './ui/input.js';
 
 export type Filter = {
   q: string;
@@ -29,14 +32,13 @@ export function FilterBar({ tags, filter, onChange }: Props) {
 
   return (
     <div className="flex flex-wrap items-center gap-2 border-b border-border bg-surface px-6 py-2">
-      <div className="relative">
-        <input
+      <div className="relative w-full sm:w-56">
+        <Input
           type="search"
           value={filter.q}
           onChange={(e) => onChange({ ...filter, q: e.target.value })}
           placeholder="Search cards…"
           aria-label="Search cards"
-          className="w-56 rounded-md border border-border bg-bg px-3 py-1.5 text-sm text-fg placeholder:text-fg-muted focus:border-fg-muted focus:outline-none"
         />
       </div>
 
@@ -50,11 +52,10 @@ export function FilterBar({ tags, filter, onChange }: Props) {
                   type="button"
                   onClick={() => toggleTag(tag.id)}
                   aria-pressed={on}
-                  className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-medium transition ${
-                    on
-                      ? 'border-accent bg-accent/10 text-fg'
-                      : 'border-border bg-bg/60 text-fg-muted hover:text-fg'
-                  }`}
+                  className={badgeVariants({
+                    variant: on ? 'accent' : 'outline',
+                    interactive: true,
+                  })}
                 >
                   <span
                     aria-hidden="true"
@@ -70,13 +71,9 @@ export function FilterBar({ tags, filter, onChange }: Props) {
       )}
 
       {active && (
-        <button
-          type="button"
-          onClick={() => onChange(emptyFilter)}
-          className="ml-auto rounded px-2 py-1 text-xs text-fg-muted hover:text-fg"
-        >
+        <Button variant="ghost" size="sm" onClick={() => onChange(emptyFilter)} className="ml-auto">
           Clear
-        </button>
+        </Button>
       )}
     </div>
   );

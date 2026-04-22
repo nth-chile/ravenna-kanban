@@ -1,10 +1,13 @@
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import type { CardWithRelations } from '@ravenna/shared';
+import { CheckSquare, MessageSquare } from 'lucide-react';
+import { Badge } from './ui/badge.js';
 
 type Props = {
   card: CardWithRelations;
   onClick: () => void;
+  readOnly?: boolean;
 };
 
 function snippet(text: string, max = 140): string {
@@ -13,12 +16,58 @@ function snippet(text: string, max = 140): string {
   return `${trimmed.slice(0, max).trimEnd()}…`;
 }
 
-export function Card({ card, onClick }: Props) {
+export function Card({ card, onClick, readOnly = false }: Props) {
   const doneSubtasks = card.subtasks.filter((s) => s.done).length;
   const totalSubtasks = card.subtasks.length;
   const commentCount = card.comments.length;
   const description = card.description.trim();
 
+  if (readOnly) {
+    return (
+      <button
+        type="button"
+        onClick={onClick}
+        className="block w-full rounded-lg border border-border bg-surface p-3 text-left shadow-sm transition hover:border-fg-muted/50 hover:shadow focus:outline-none focus:ring-2 focus:ring-accent"
+      >
+        <CardBody
+          card={card}
+          description={description}
+          doneSubtasks={doneSubtasks}
+          totalSubtasks={totalSubtasks}
+          commentCount={commentCount}
+        />
+      </button>
+    );
+  }
+
+  return (
+    <SortableCard
+      card={card}
+      onClick={onClick}
+      description={description}
+      doneSubtasks={doneSubtasks}
+      totalSubtasks={totalSubtasks}
+      commentCount={commentCount}
+    />
+  );
+}
+
+type CardBodyProps = {
+  card: CardWithRelations;
+  description: string;
+  doneSubtasks: number;
+  totalSubtasks: number;
+  commentCount: number;
+};
+
+function SortableCard({
+  card,
+  onClick,
+  description,
+  doneSubtasks,
+  totalSubtasks,
+  commentCount,
+}: CardBodyProps & { onClick: () => void }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: card.id,
     data: { type: 'card', columnId: card.columnId },
@@ -39,6 +88,20 @@ export function Card({ card, onClick }: Props) {
       onClick={onClick}
       className="block w-full cursor-grab touch-none rounded-lg border border-border bg-surface p-3 text-left shadow-sm transition hover:border-fg-muted/50 hover:shadow focus:outline-none focus:ring-2 focus:ring-accent active:cursor-grabbing"
     >
+      <CardBody
+        card={card}
+        description={description}
+        doneSubtasks={doneSubtasks}
+        totalSubtasks={totalSubtasks}
+        commentCount={commentCount}
+      />
+    </button>
+  );
+}
+
+function CardBody({ card, description, doneSubtasks, totalSubtasks, commentCount }: CardBodyProps) {
+  return (
+    <>
       <h3 className="text-sm font-medium leading-snug text-fg">{card.title}</h3>
 
       {description.length > 0 && (
@@ -48,16 +111,15 @@ export function Card({ card, onClick }: Props) {
       {card.tags.length > 0 && (
         <ul className="mt-2 flex flex-wrap gap-1">
           {card.tags.map((tag) => (
-            <li
-              key={tag.id}
-              className="inline-flex items-center gap-1 rounded-full border border-border bg-bg/60 px-2 py-0.5 text-[11px] font-medium text-fg"
-            >
-              <span
-                aria-hidden="true"
-                className="h-1.5 w-1.5 rounded-full"
-                style={{ backgroundColor: tag.color }}
-              />
-              {tag.name}
+            <li key={tag.id}>
+              <Badge>
+                <span
+                  aria-hidden="true"
+                  className="h-1.5 w-1.5 rounded-full"
+                  style={{ backgroundColor: tag.color }}
+                />
+                {tag.name}
+              </Badge>
             </li>
           ))}
         </ul>
@@ -70,17 +132,7 @@ export function Card({ card, onClick }: Props) {
               className="inline-flex items-center gap-1"
               aria-label={`${doneSubtasks} of ${totalSubtasks} subtasks done`}
             >
-              <svg
-                aria-hidden="true"
-                viewBox="0 0 16 16"
-                className="h-3.5 w-3.5"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.5"
-              >
-                <rect x="2" y="2" width="12" height="12" rx="2" />
-                <path d="M5 8.5l2 2 4-4.5" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
+              <CheckSquare className="h-3.5 w-3.5" aria-hidden="true" />
               {doneSubtasks}/{totalSubtasks}
             </span>
           )}
@@ -89,24 +141,12 @@ export function Card({ card, onClick }: Props) {
               className="inline-flex items-center gap-1"
               aria-label={`${commentCount} comment${commentCount === 1 ? '' : 's'}`}
             >
-              <svg
-                aria-hidden="true"
-                viewBox="0 0 16 16"
-                className="h-3.5 w-3.5"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.5"
-              >
-                <path
-                  d="M3 4.5A1.5 1.5 0 0 1 4.5 3h7A1.5 1.5 0 0 1 13 4.5v5A1.5 1.5 0 0 1 11.5 11H7l-3 2.5V11h-.5A.5.5 0 0 1 3 10.5z"
-                  strokeLinejoin="round"
-                />
-              </svg>
+              <MessageSquare className="h-3.5 w-3.5" aria-hidden="true" />
               {commentCount}
             </span>
           )}
         </div>
       )}
-    </button>
+    </>
   );
 }

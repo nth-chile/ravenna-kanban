@@ -12,7 +12,7 @@ import {
   horizontalListSortingStrategy,
   sortableKeyboardCoordinates,
 } from '@dnd-kit/sortable';
-import type { BoardResponse } from '@ravenna/shared';
+import type { BoardResponse, ColumnWithCards } from '@ravenna/shared';
 import { useMemo, useState } from 'react';
 import { useBoard } from '../hooks/use-board.js';
 import { useMoveCard, useReorderCard } from '../hooks/use-card-mutations.js';
@@ -21,6 +21,7 @@ import { ApiError } from '../lib/api.js';
 import { CardModal } from './CardModal.js';
 import { Column } from './Column.js';
 import { type Filter, FilterBar, emptyFilter } from './FilterBar.js';
+import { type GroupBy, GroupBySelect } from './GroupBySelect.js';
 import { ThemeToggle } from './ThemeToggle.js';
 
 function applyFilter(board: BoardResponse, filter: Filter): BoardResponse {
@@ -43,10 +44,35 @@ function applyFilter(board: BoardResponse, filter: Filter): BoardResponse {
   };
 }
 
+function groupByTag(board: BoardResponse): ColumnWithCards[] {
+  const allCards = board.columns.flatMap((c) => c.cards);
+
+  const tagColumns: ColumnWithCards[] = board.tags.map((tag, i) => ({
+    id: `virtual-tag-${tag.id}`,
+    boardId: board.id,
+    name: tag.name,
+    position: i + 1,
+    createdAt: tag.createdAt,
+    cards: allCards.filter((card) => card.tags.some((t) => t.id === tag.id)),
+  }));
+
+  const untagged: ColumnWithCards = {
+    id: 'virtual-untagged',
+    boardId: board.id,
+    name: 'Untagged',
+    position: 0,
+    createdAt: new Date(0),
+    cards: allCards.filter((card) => card.tags.length === 0),
+  };
+
+  return untagged.cards.length > 0 ? [untagged, ...tagColumns] : tagColumns;
+}
+
 export function Board() {
   const { data, isPending, isError, error, refetch, isFetching } = useBoard();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [filter, setFilter] = useState<Filter>(emptyFilter);
+  const [groupBy, setGroupBy] = useState<GroupBy>('none');
   const reorderCard = useReorderCard();
   const moveCard = useMoveCard();
   const reorderColumn = useReorderColumn();
@@ -90,7 +116,8 @@ export function Board() {
     );
   }
 
-  const columns = visible?.columns ?? data.columns;
+  const filtered = visible ?? data;
+  const columns = groupBy === 'tag' ? groupByTag(filtered) : filtered.columns;
   const selected = selectedId
     ? (data.columns.flatMap((c) => c.cards).find((c) => c.id === selectedId) ?? null)
     : null;
@@ -105,7 +132,6 @@ export function Board() {
     const board = data as BoardResponse;
 
     if (activeData?.type === 'column') {
-      // Column reorder
       const overType = overData?.type;
       if (overType !== 'column' && overType !== 'card') return;
       const overColumnId = overType === 'column' ? String(over.id) : (overData?.columnId ?? null);
@@ -161,6 +187,8 @@ export function Board() {
     }
   }
 
+  const grouped = groupBy !== 'none';
+
   return (
     <div className="flex h-full flex-col">
       <header className="flex items-center justify-between border-b border-border bg-surface px-6 py-3">
@@ -168,10 +196,14 @@ export function Board() {
           <h1 className="text-base font-semibold text-fg">{data.name}</h1>
           <p className="text-xs text-fg-muted">
             {columns.length} column{columns.length === 1 ? '' : 's'}
+            {grouped ? ' · grouped' : ''}
             {isFetching ? ' · refreshing…' : ''}
           </p>
         </div>
-        <ThemeToggle />
+        <div className="flex items-center gap-3">
+          <GroupBySelect value={groupBy} onChange={setGroupBy} />
+          <ThemeToggle />
+        </div>
       </header>
 
       <FilterBar tags={data.tags} filter={filter} onChange={setFilter} />
@@ -179,6 +211,19 @@ export function Board() {
       {data.columns.length === 0 ? (
         <div className="flex flex-1 items-center justify-center p-12">
           <p className="text-sm text-fg-muted">This board has no columns yet.</p>
+        </div>
+      ) : grouped ? (
+        <div className="flex-1 overflow-x-auto">
+          <div className="flex h-full min-w-max items-start gap-4 p-6">
+            {columns.map((column) => (
+              <Column
+                key={column.id}
+                column={column}
+                onSelectCard={(card) => setSelectedId(card.id)}
+                readOnly
+              />
+            ))}
+          </div>
         </div>
       ) : (
         <DndContext sensors={sensors} collisionDetection={closestCorners} onDragEnd={handleDragEnd}>

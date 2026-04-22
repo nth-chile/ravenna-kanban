@@ -14,6 +14,18 @@ export default {
         'accent-fg': 'var(--accent-fg)',
         danger: 'var(--danger)',
       },
+      keyframes: {
+        'fade-in': { from: { opacity: '0' }, to: { opacity: '1' } },
+        'fade-out': { from: { opacity: '1' }, to: { opacity: '0' } },
+        'zoom-in': { from: { transform: 'scale(0.96)' }, to: { transform: 'scale(1)' } },
+        'zoom-out': { from: { transform: 'scale(1)' }, to: { transform: 'scale(0.96)' } },
+      },
+      animation: {
+        'fade-in': 'fade-in 150ms ease-out',
+        'fade-out': 'fade-out 150ms ease-in',
+        'zoom-in': 'zoom-in 150ms ease-out',
+        'zoom-out': 'zoom-out 150ms ease-in',
+      },
     },
   },
   plugins: [],
