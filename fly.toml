@@ -1,25 +1,30 @@
-app = "ravenna-kanban-demo"
-primary_region = "iad"
+# fly.toml app configuration file generated for ravenna-kanban-demo on 2026-04-22T02:32:24-04:00
+#
+# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
+#
+
+app = 'ravenna-kanban-demo'
+primary_region = 'iad'
 
 [build]
-  dockerfile = "Dockerfile"
+  dockerfile = 'Dockerfile'
 
 [env]
-  NODE_ENV = "production"
-  DATABASE_URL = "/data/kanban.db"
-  PORT = "3001"
+  DATABASE_URL = '/data/kanban.db'
+  NODE_ENV = 'production'
+  PORT = '3001'
 
 [[mounts]]
-  source = "kanban_data"
-  destination = "/data"
+  source = 'kanban_data'
+  destination = '/data'
 
 [http_service]
   internal_port = 3001
   force_https = true
-  auto_stop_machines = "stop"
+  auto_stop_machines = 'stop'
   auto_start_machines = true
   min_machines_running = 0
 
 [[vm]]
-  size = "shared-cpu-1x"
-  memory = "256mb"
+  size = 'shared-cpu-1x'
+  memory = '256mb'
