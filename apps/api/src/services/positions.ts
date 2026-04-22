@@ -1,4 +1,4 @@
-import { schema } from '@ravenna/shared';
+import { positionBetween, schema } from '@ravenna/shared';
 import { and, desc, eq, isNull } from 'drizzle-orm';
 import type { DB } from '../db/index.js';
 
@@ -29,10 +29,7 @@ export function computeCardPosition(
     throw new Error(`afterCardId ${afterCardId} is not in column ${columnId}`);
   }
 
-  if (before && after) return (before.position + after.position) / 2;
-  if (before) return before.position + 1;
-  if (after) return after.position - 1;
-  return 1;
+  return positionBetween(before?.position, after?.position);
 }
 
 export function appendCardPosition(tx: Tx, columnId: string): number {
@@ -69,10 +66,7 @@ export function computeColumnPosition(
     throw new Error(`afterColumnId ${afterColumnId} is not in board ${boardId}`);
   }
 
-  if (before && after) return (before.position + after.position) / 2;
-  if (before) return before.position + 1;
-  if (after) return after.position - 1;
-  return 1;
+  return positionBetween(before?.position, after?.position);
 }
 
 export function appendColumnPosition(tx: Tx, boardId: string): number {

@@ -9,6 +9,7 @@ import { errorHandler } from './middleware/error.js';
 import { rateLimit } from './middleware/rateLimit.js';
 import { requestId } from './middleware/requestId.js';
 import { requestLogger } from './middleware/requestLogger.js';
+import { serveSpa } from './middleware/serveStatic.js';
 import { boardRoute } from './routes/board.js';
 import { cardsRoute } from './routes/cards.js';
 import { columnsRoute } from './routes/columns.js';
@@ -39,6 +40,10 @@ app.route('/api/columns', columnsRoute);
 app.route('/api/subtasks', subtasksRoute);
 app.route('/api/comments', commentsRoute);
 app.route('/api/tags', tagsRoute);
+
+if (env.NODE_ENV === 'production') {
+  app.use('*', serveSpa('apps/web/dist'));
+}
 
 app.notFound((c) =>
   c.json(
