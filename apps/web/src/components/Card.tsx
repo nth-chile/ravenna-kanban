@@ -1,3 +1,5 @@
+import { useSortable } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import type { CardWithRelations } from '@ravenna/shared';
 
 type Props = {
@@ -17,11 +19,25 @@ export function Card({ card, onClick }: Props) {
   const commentCount = card.comments.length;
   const description = card.description.trim();
 
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: card.id,
+    data: { type: 'card', columnId: card.columnId },
+  });
+  const style = {
+    transform: CSS.Translate.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
   return (
     <button
+      ref={setNodeRef}
+      style={style}
+      {...attributes}
+      {...listeners}
       type="button"
       onClick={onClick}
-      className="block w-full cursor-pointer rounded-lg border border-border bg-surface p-3 text-left shadow-sm transition hover:border-fg-muted/50 hover:shadow focus:outline-none focus:ring-2 focus:ring-accent"
+      className="block w-full cursor-grab touch-none rounded-lg border border-border bg-surface p-3 text-left shadow-sm transition hover:border-fg-muted/50 hover:shadow focus:outline-none focus:ring-2 focus:ring-accent active:cursor-grabbing"
     >
       <h3 className="text-sm font-medium leading-snug text-fg">{card.title}</h3>
 

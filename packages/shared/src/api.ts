@@ -37,7 +37,6 @@ export type BoardResponse = z.infer<typeof BoardResponseSchema>;
 
 const title = z.string().trim().min(1).max(200);
 const description = z.string().max(10_000);
-const position = z.number().finite();
 
 export const CreateCardInputSchema = z.object({
   columnId: z.string().uuid(),
@@ -93,7 +92,6 @@ export type CreateTagInput = z.infer<typeof CreateTagInputSchema>;
 export const CreateSubtaskInputSchema = z.object({
   cardId: z.string().uuid(),
   title,
-  position,
 });
 export type CreateSubtaskInput = z.infer<typeof CreateSubtaskInputSchema>;
 

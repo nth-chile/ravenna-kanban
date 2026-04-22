@@ -2,7 +2,7 @@ import { schema } from '@ravenna/shared';
 import { and, desc, eq, isNull } from 'drizzle-orm';
 import type { DB } from '../db/index.js';
 
-const { cards, columns } = schema;
+const { cards, columns, subtasks } = schema;
 
 type Tx = DB | Parameters<Parameters<DB['transaction']>[0]>[0];
 
@@ -81,6 +81,17 @@ export function appendColumnPosition(tx: Tx, boardId: string): number {
     .from(columns)
     .where(eq(columns.boardId, boardId))
     .orderBy(desc(columns.position))
+    .limit(1)
+    .get();
+  return last ? last.position + 1 : 1;
+}
+
+export function appendSubtaskPosition(tx: Tx, cardId: string): number {
+  const last = tx
+    .select({ position: subtasks.position })
+    .from(subtasks)
+    .where(eq(subtasks.cardId, cardId))
+    .orderBy(desc(subtasks.position))
     .limit(1)
     .get();
   return last ? last.position + 1 : 1;

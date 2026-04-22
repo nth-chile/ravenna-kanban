@@ -1,3 +1,5 @@
+import { useDroppable } from '@dnd-kit/core';
+import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import type { CardWithRelations, ColumnWithCards } from '@ravenna/shared';
 import { AddCardInline } from './AddCardInline.js';
 import { Card } from './Card.js';
@@ -9,10 +11,17 @@ type Props = {
 
 export function Column({ column, onSelectCard }: Props) {
   const count = column.cards.length;
+  const { setNodeRef, isOver } = useDroppable({
+    id: `column-${column.id}`,
+    data: { type: 'column', columnId: column.id },
+  });
 
   return (
     <section
-      className="flex h-full w-72 shrink-0 flex-col rounded-xl border border-border bg-bg/60"
+      ref={setNodeRef}
+      className={`flex h-full w-72 shrink-0 flex-col rounded-xl border bg-bg/60 transition-colors ${
+        isOver ? 'border-accent/50' : 'border-border'
+      }`}
       aria-label={`Column ${column.name}`}
     >
       <header className="flex items-center justify-between px-3 pt-3 pb-2">
@@ -26,11 +35,14 @@ export function Column({ column, onSelectCard }: Props) {
       </header>
 
       <div className="flex-1 space-y-2 overflow-y-auto px-3 pb-3">
-        {count === 0
-          ? null
-          : column.cards.map((card) => (
-              <Card key={card.id} card={card} onClick={() => onSelectCard(card)} />
-            ))}
+        <SortableContext
+          items={column.cards.map((c) => c.id)}
+          strategy={verticalListSortingStrategy}
+        >
+          {column.cards.map((card) => (
+            <Card key={card.id} card={card} onClick={() => onSelectCard(card)} />
+          ))}
+        </SortableContext>
         <AddCardInline columnId={column.id} />
       </div>
     </section>

@@ -12,6 +12,9 @@ import { requestLogger } from './middleware/requestLogger.js';
 import { boardRoute } from './routes/board.js';
 import { cardsRoute } from './routes/cards.js';
 import { columnsRoute } from './routes/columns.js';
+import { commentsRoute } from './routes/comments.js';
+import { subtasksRoute } from './routes/subtasks.js';
+import { cardTagsRoute, tagsRoute } from './routes/tags.js';
 
 runMigrations();
 await seed();
@@ -31,7 +34,11 @@ app.get('/health', (c) => c.json({ ok: true }));
 
 app.route('/api/board', boardRoute);
 app.route('/api/cards', cardsRoute);
+app.route('/api/cards', cardTagsRoute);
 app.route('/api/columns', columnsRoute);
+app.route('/api/subtasks', subtasksRoute);
+app.route('/api/comments', commentsRoute);
+app.route('/api/tags', tagsRoute);
 
 app.notFound((c) =>
   c.json(
