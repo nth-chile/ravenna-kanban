@@ -31,7 +31,7 @@ rm apps/api/data/kanban.db && SEED_LARGE_COLUMN=200 pnpm dev
 
 ## Live demo
 
-Live demo: _coming soon - Fly.io, SQLite on a volume_.
+https://ravenna-kanban-demo.fly.dev (Fly.io, SQLite on a volume)
 
 ## Accessibility
 
