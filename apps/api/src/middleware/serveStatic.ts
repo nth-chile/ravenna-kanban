@@ -3,12 +3,12 @@ import type { MiddlewareHandler } from 'hono';
 
 /**
  * Serves static files for the SPA from `root` (relative to process.cwd()).
- * - Skips anything under /api or /health so those stay with the JSON API.
- * - Falls back to index.html for unknown paths that accept text/html,
- *   so client-side routing works on deep-link refreshes.
+ * - Skips /api/* and /health so those stay with the JSON API.
+ * - Falls back to index.html for GET requests so deep links / refreshes
+ *   land on the SPA shell.
  */
 export const serveSpa = (root: string): MiddlewareHandler => {
-  const fileServer = serveStatic({ root });
+  const assetServer = serveStatic({ root });
   const indexFallback = serveStatic({ root, path: 'index.html' });
 
   return async (c, next) => {
@@ -18,26 +18,17 @@ export const serveSpa = (root: string): MiddlewareHandler => {
       return next();
     }
 
-    // Try to serve a real file first. If serveStatic can't find one,
-    // it calls next() without sending a response.
-    let served = true;
-    await fileServer(c, async () => {
-      served = false;
-    });
-    if (served && c.res.status !== 404) {
-      return;
+    // Let serveStatic try to match a real file. It will either return
+    // a response or call its inner next() — we treat the latter as "no match".
+    const assetResult = await assetServer(c, async () => undefined);
+    if (assetResult instanceof Response) return assetResult;
+
+    // SPA fallback: only for GET. Serve index.html so client-side routes work.
+    if (c.req.method === 'GET') {
+      const fallbackResult = await indexFallback(c, async () => undefined);
+      if (fallbackResult instanceof Response) return fallbackResult;
     }
 
-    // SPA fallback: serve index.html for HTML navigation requests.
-    const accept = c.req.header('accept') ?? '';
-    if (c.req.method === 'GET' && accept.includes('text/html')) {
-      let fallbackServed = true;
-      await indexFallback(c, async () => {
-        fallbackServed = false;
-      });
-      if (fallbackServed) return;
-    }
-
-    await next();
+    return next();
   };
 };
