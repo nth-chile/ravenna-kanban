@@ -1,4 +1,10 @@
-import type { BoardResponse, Column, ReorderColumnInput } from '@ravenna/shared';
+import type {
+  BoardResponse,
+  Column,
+  CreateColumnInput,
+  ReorderColumnInput,
+  UpdateColumnInput,
+} from '@ravenna/shared';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '../lib/api.js';
 import { boardQueryKey } from './use-board.js';
@@ -25,6 +31,32 @@ function reorderColumnInBoard(
   }
   columns.splice(insertIdx, 0, moved);
   return { ...board, columns };
+}
+
+export function useCreateColumn() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (input: CreateColumnInput) =>
+      api<Column>('/columns', { method: 'POST', body: JSON.stringify(input) }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: boardQueryKey }),
+  });
+}
+
+export function useUpdateColumn() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, input }: { id: string; input: UpdateColumnInput }) =>
+      api<Column>(`/columns/${id}`, { method: 'PATCH', body: JSON.stringify(input) }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: boardQueryKey }),
+  });
+}
+
+export function useDeleteColumn() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => api<{ ok: true }>(`/columns/${id}`, { method: 'DELETE' }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: boardQueryKey }),
+  });
 }
 
 export function useReorderColumn() {

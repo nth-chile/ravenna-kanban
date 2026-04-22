@@ -20,6 +20,7 @@ import { useBoard } from '../hooks/use-board.js';
 import { useMoveCard, useReorderCard } from '../hooks/use-card-mutations.js';
 import { useReorderColumn } from '../hooks/use-column-mutations.js';
 import { ApiError } from '../lib/api.js';
+import { AddColumnInline } from './AddColumnInline.js';
 import { Card } from './Card.js';
 import { CardModal } from './CardModal.js';
 import { Column } from './Column.js';
@@ -254,8 +255,11 @@ export function Board() {
       <FilterBar tags={data.tags} filter={filter} onChange={setFilter} />
 
       {data.columns.length === 0 ? (
-        <div className="flex flex-1 items-center justify-center p-12">
+        <div className="flex flex-1 flex-col items-center justify-center gap-4 p-12">
           <p className="text-sm text-fg-muted">This board has no columns yet.</p>
+          <div className="w-[85vw] max-w-[22rem] sm:w-72 sm:max-w-none">
+            <AddColumnInline boardId={data.id} />
+          </div>
         </div>
       ) : (
         <DndContext
@@ -282,6 +286,7 @@ export function Board() {
                     groupByTag={grouped ? data.tags : undefined}
                   />
                 ))}
+                <AddColumnInline boardId={data.id} />
               </div>
             </div>
           </SortableContext>
