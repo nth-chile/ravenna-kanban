@@ -1,6 +1,6 @@
 import { SortableContext, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import type { CardWithRelations, ColumnWithCards } from '@ravenna/shared';
+import type { CardWithRelations, ColumnWithCards, Tag } from '@ravenna/shared';
 import { AddCardInline } from './AddCardInline.js';
 import { Card } from './Card.js';
 import { Badge } from './ui/badge.js';
@@ -9,9 +9,10 @@ type Props = {
   column: ColumnWithCards;
   onSelectCard: (card: CardWithRelations) => void;
   readOnly?: boolean;
+  groupByTag?: Tag[];
 };
 
-export function Column({ column, onSelectCard, readOnly = false }: Props) {
+export function Column({ column, onSelectCard, readOnly = false, groupByTag }: Props) {
   const count = column.cards.length;
 
   if (readOnly) {
@@ -43,13 +44,77 @@ export function Column({ column, onSelectCard, readOnly = false }: Props) {
     );
   }
 
-  return <SortableColumn column={column} onSelectCard={onSelectCard} />;
+  return <SortableColumn column={column} onSelectCard={onSelectCard} groupByTag={groupByTag} />;
+}
+
+function CardsByTag({
+  cards,
+  tags,
+  onSelectCard,
+}: {
+  cards: CardWithRelations[];
+  tags: Tag[];
+  onSelectCard: (card: CardWithRelations) => void;
+}) {
+  const sections = tags
+    .map((tag) => ({
+      tag,
+      cards: cards.filter((c) => c.tags.some((t) => t.id === tag.id)),
+    }))
+    .filter((s) => s.cards.length > 0);
+
+  const untagged = cards.filter((c) => c.tags.length === 0);
+
+  return (
+    <>
+      {sections.map(({ tag, cards: tagCards }) => (
+        <section key={tag.id} aria-label={`${tag.name} cards`} className="space-y-2">
+          <h3 className="sticky top-0 z-[1] -mx-3 flex items-center gap-1.5 bg-bg/80 px-3 py-1 text-xs font-medium text-fg-muted backdrop-blur">
+            <span
+              aria-hidden="true"
+              className="h-1.5 w-1.5 rounded-full"
+              style={{ backgroundColor: tag.color }}
+            />
+            {tag.name}
+          </h3>
+          {tagCards.map((card) => (
+            <Card
+              key={`${tag.id}-${card.id}`}
+              card={card}
+              onClick={() => onSelectCard(card)}
+              readOnly
+            />
+          ))}
+        </section>
+      ))}
+      {untagged.length > 0 && (
+        <section aria-label="Untagged cards" className="space-y-2">
+          <h3 className="sticky top-0 z-[1] -mx-3 bg-bg/80 px-3 py-1 text-xs font-medium text-fg-muted backdrop-blur">
+            Untagged
+          </h3>
+          {untagged.map((card) => (
+            <Card
+              key={`untagged-${card.id}`}
+              card={card}
+              onClick={() => onSelectCard(card)}
+              readOnly
+            />
+          ))}
+        </section>
+      )}
+    </>
+  );
 }
 
 function SortableColumn({
   column,
   onSelectCard,
-}: { column: ColumnWithCards; onSelectCard: (c: CardWithRelations) => void }) {
+  groupByTag,
+}: {
+  column: ColumnWithCards;
+  onSelectCard: (c: CardWithRelations) => void;
+  groupByTag?: Tag[];
+}) {
   const count = column.cards.length;
   const { attributes, listeners, setNodeRef, transform, transition, isDragging, isOver } =
     useSortable({
@@ -88,14 +153,20 @@ function SortableColumn({
       </header>
 
       <div className="flex-1 space-y-2 overflow-y-auto px-3 pb-3">
-        <SortableContext
-          items={column.cards.map((c) => c.id)}
-          strategy={verticalListSortingStrategy}
-        >
-          {column.cards.map((card) => (
-            <Card key={card.id} card={card} onClick={() => onSelectCard(card)} />
-          ))}
-        </SortableContext>
+        {groupByTag ? (
+          count > 0 && (
+            <CardsByTag cards={column.cards} tags={groupByTag} onSelectCard={onSelectCard} />
+          )
+        ) : (
+          <SortableContext
+            items={column.cards.map((c) => c.id)}
+            strategy={verticalListSortingStrategy}
+          >
+            {column.cards.map((card) => (
+              <Card key={card.id} card={card} onClick={() => onSelectCard(card)} />
+            ))}
+          </SortableContext>
+        )}
         <AddCardInline columnId={column.id} />
       </div>
     </section>

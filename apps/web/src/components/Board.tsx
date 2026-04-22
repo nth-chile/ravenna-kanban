@@ -47,30 +47,6 @@ function applyFilter(board: BoardResponse, filter: Filter): BoardResponse {
   };
 }
 
-function groupByTag(board: BoardResponse): ColumnWithCards[] {
-  const allCards = board.columns.flatMap((c) => c.cards);
-
-  const tagColumns: ColumnWithCards[] = board.tags.map((tag, i) => ({
-    id: `virtual-tag-${tag.id}`,
-    boardId: board.id,
-    name: tag.name,
-    position: i + 1,
-    createdAt: tag.createdAt,
-    cards: allCards.filter((card) => card.tags.some((t) => t.id === tag.id)),
-  }));
-
-  const untagged: ColumnWithCards = {
-    id: 'virtual-untagged',
-    boardId: board.id,
-    name: 'Untagged',
-    position: 0,
-    createdAt: new Date(0),
-    cards: allCards.filter((card) => card.tags.length === 0),
-  };
-
-  return untagged.cards.length > 0 ? [untagged, ...tagColumns] : tagColumns;
-}
-
 export function Board() {
   const { data, isPending, isError, error, refetch, isFetching } = useBoard();
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -129,7 +105,7 @@ export function Board() {
   }
 
   const filtered = visible ?? data;
-  const columns = groupBy === 'tag' ? groupByTag(filtered) : filtered.columns;
+  const columns = filtered.columns;
   const selected = selectedId
     ? (data.columns.flatMap((c) => c.cards).find((c) => c.id === selectedId) ?? null)
     : null;
@@ -265,6 +241,7 @@ export function Board() {
           <h1 className="truncate text-base font-semibold text-fg">{data.name}</h1>
           <p className="text-xs text-fg-muted">
             {columns.length} column{columns.length === 1 ? '' : 's'}
+            {grouped ? ' · grouped by tag' : ''}
             {isFetching ? ' · refreshing…' : ''}
           </p>
         </div>
@@ -279,19 +256,6 @@ export function Board() {
       {data.columns.length === 0 ? (
         <div className="flex flex-1 items-center justify-center p-12">
           <p className="text-sm text-fg-muted">This board has no columns yet.</p>
-        </div>
-      ) : grouped ? (
-        <div className="flex-1 snap-x snap-mandatory overflow-x-auto scroll-pl-6 sm:snap-none sm:scroll-pl-0">
-          <div className="flex h-full min-w-max items-start gap-4 p-6">
-            {columns.map((column) => (
-              <Column
-                key={column.id}
-                column={column}
-                onSelectCard={(card) => setSelectedId(card.id)}
-                readOnly
-              />
-            ))}
-          </div>
         </div>
       ) : (
         <DndContext
@@ -315,6 +279,7 @@ export function Board() {
                     key={column.id}
                     column={column}
                     onSelectCard={(card) => setSelectedId(card.id)}
+                    groupByTag={grouped ? data.tags : undefined}
                   />
                 ))}
               </div>
