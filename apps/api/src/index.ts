@@ -6,6 +6,7 @@ import { seed } from './db/seed.js';
 import { env } from './env.js';
 import { logger } from './logger.js';
 import { errorHandler } from './middleware/error.js';
+import { rateLimit } from './middleware/rateLimit.js';
 import { requestId } from './middleware/requestId.js';
 import { requestLogger } from './middleware/requestLogger.js';
 import { boardRoute } from './routes/board.js';
@@ -19,6 +20,7 @@ const app = new Hono();
 
 app.use('*', requestId());
 app.use('*', requestLogger());
+app.use('/api/*', rateLimit());
 
 app.get('/api/ping', (c) => {
   const body = PingSchema.parse({ ok: true, message: 'pong' });
