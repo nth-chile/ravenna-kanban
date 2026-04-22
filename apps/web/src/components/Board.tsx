@@ -7,26 +7,56 @@ import {
   useSensor,
   useSensors,
 } from '@dnd-kit/core';
-import { sortableKeyboardCoordinates } from '@dnd-kit/sortable';
+import {
+  SortableContext,
+  horizontalListSortingStrategy,
+  sortableKeyboardCoordinates,
+} from '@dnd-kit/sortable';
 import type { BoardResponse } from '@ravenna/shared';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useBoard } from '../hooks/use-board.js';
 import { useMoveCard, useReorderCard } from '../hooks/use-card-mutations.js';
+import { useReorderColumn } from '../hooks/use-column-mutations.js';
 import { ApiError } from '../lib/api.js';
 import { CardModal } from './CardModal.js';
 import { Column } from './Column.js';
+import { type Filter, FilterBar, emptyFilter } from './FilterBar.js';
 import { ThemeToggle } from './ThemeToggle.js';
+
+function applyFilter(board: BoardResponse, filter: Filter): BoardResponse {
+  const q = filter.q.trim().toLowerCase();
+  const activeTags = new Set(filter.tagIds);
+
+  return {
+    ...board,
+    columns: board.columns.map((col) => ({
+      ...col,
+      cards: col.cards.filter((card) => {
+        if (activeTags.size > 0 && !card.tags.some((t) => activeTags.has(t.id))) return false;
+        if (q) {
+          const haystack = `${card.title} ${card.description}`.toLowerCase();
+          if (!haystack.includes(q)) return false;
+        }
+        return true;
+      }),
+    })),
+  };
+}
 
 export function Board() {
   const { data, isPending, isError, error, refetch, isFetching } = useBoard();
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [filter, setFilter] = useState<Filter>(emptyFilter);
   const reorderCard = useReorderCard();
   const moveCard = useMoveCard();
+  const reorderColumn = useReorderColumn();
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
   );
+
+  const visible = useMemo(() => (data ? applyFilter(data, filter) : null), [data, filter]);
 
   if (isPending) {
     return (
@@ -60,9 +90,9 @@ export function Board() {
     );
   }
 
-  const columns = data.columns;
+  const columns = visible?.columns ?? data.columns;
   const selected = selectedId
-    ? (columns.flatMap((c) => c.cards).find((c) => c.id === selectedId) ?? null)
+    ? (data.columns.flatMap((c) => c.cards).find((c) => c.id === selectedId) ?? null)
     : null;
 
   function handleDragEnd(event: DragEndEvent) {
@@ -71,13 +101,31 @@ export function Board() {
 
     const activeData = active.data.current as { type?: string; columnId?: string } | undefined;
     const overData = over.data.current as { type?: string; columnId?: string } | undefined;
-    if (activeData?.type !== 'card') return;
 
+    const board = data as BoardResponse;
+
+    if (activeData?.type === 'column') {
+      // Column reorder
+      const overType = overData?.type;
+      if (overType !== 'column' && overType !== 'card') return;
+      const overColumnId = overType === 'column' ? String(over.id) : (overData?.columnId ?? null);
+      if (!overColumnId || overColumnId === String(active.id)) return;
+
+      const oldIdx = board.columns.findIndex((c) => c.id === String(active.id));
+      const newIdx = board.columns.findIndex((c) => c.id === overColumnId);
+      if (oldIdx === -1 || newIdx === -1) return;
+
+      reorderColumn.mutate({
+        id: String(active.id),
+        input: oldIdx < newIdx ? { beforeColumnId: overColumnId } : { afterColumnId: overColumnId },
+      });
+      return;
+    }
+
+    if (activeData?.type !== 'card') return;
     const activeCardId = String(active.id);
     const activeColumnId = activeData.columnId;
     if (!activeColumnId) return;
-
-    const board = data as BoardResponse;
 
     if (overData?.type === 'card') {
       const overCardId = String(over.id);
@@ -102,7 +150,7 @@ export function Board() {
         });
       }
     } else if (overData?.type === 'column') {
-      const targetColumnId = overData.columnId;
+      const targetColumnId = String(over.id);
       if (!targetColumnId || targetColumnId === activeColumnId) return;
       const col = board.columns.find((c) => c.id === targetColumnId);
       const lastCard = col?.cards[col.cards.length - 1];
@@ -126,23 +174,30 @@ export function Board() {
         <ThemeToggle />
       </header>
 
-      {columns.length === 0 ? (
+      <FilterBar tags={data.tags} filter={filter} onChange={setFilter} />
+
+      {data.columns.length === 0 ? (
         <div className="flex flex-1 items-center justify-center p-12">
           <p className="text-sm text-fg-muted">This board has no columns yet.</p>
         </div>
       ) : (
         <DndContext sensors={sensors} collisionDetection={closestCorners} onDragEnd={handleDragEnd}>
-          <div className="flex-1 overflow-x-auto">
-            <div className="flex h-full min-w-max items-start gap-4 p-6">
-              {columns.map((column) => (
-                <Column
-                  key={column.id}
-                  column={column}
-                  onSelectCard={(card) => setSelectedId(card.id)}
-                />
-              ))}
+          <SortableContext
+            items={columns.map((c) => c.id)}
+            strategy={horizontalListSortingStrategy}
+          >
+            <div className="flex-1 overflow-x-auto">
+              <div className="flex h-full min-w-max items-start gap-4 p-6">
+                {columns.map((column) => (
+                  <Column
+                    key={column.id}
+                    column={column}
+                    onSelectCard={(card) => setSelectedId(card.id)}
+                  />
+                ))}
+              </div>
             </div>
-          </div>
+          </SortableContext>
         </DndContext>
       )}
 
