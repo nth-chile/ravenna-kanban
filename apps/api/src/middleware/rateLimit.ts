@@ -11,10 +11,7 @@ type RateLimitOptions = {
   windowMs?: number;
 };
 
-const getClientIp = (
-  forwardedFor: string | undefined,
-  realIp: string | undefined,
-): string => {
+const getClientIp = (forwardedFor: string | undefined, realIp: string | undefined): string => {
   const firstForwarded = forwardedFor?.split(',')[0]?.trim();
   if (firstForwarded) return firstForwarded;
   if (realIp) return realIp;
@@ -27,10 +24,7 @@ export const rateLimit = (options: RateLimitOptions = {}): MiddlewareHandler => 
   const buckets = new Map<string, Bucket>();
 
   return async (c, next) => {
-    const ip = getClientIp(
-      c.req.header('x-forwarded-for'),
-      c.req.header('x-real-ip'),
-    );
+    const ip = getClientIp(c.req.header('x-forwarded-for'), c.req.header('x-real-ip'));
     const now = Date.now();
 
     // Lazy cleanup of stale buckets.

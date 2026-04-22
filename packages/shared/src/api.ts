@@ -1,14 +1,6 @@
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
 import { z } from 'zod';
-import {
-  boards,
-  cardTags,
-  cards,
-  columns,
-  comments,
-  subtasks,
-  tags,
-} from './db/schema.js';
+import { boards, cardTags, cards, columns, comments, subtasks, tags } from './db/schema.js';
 
 export const BoardSchema = createSelectSchema(boards);
 export const ColumnSchema = createSelectSchema(columns);

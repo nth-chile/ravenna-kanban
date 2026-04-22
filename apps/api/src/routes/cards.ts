@@ -23,7 +23,9 @@ export const cardsRoute = new Hono()
     const q = c.req.valid('query');
 
     const titleDescMatch =
-      q.q !== undefined ? or(like(cards.title, `%${q.q}%`), like(cards.description, `%${q.q}%`)) : undefined;
+      q.q !== undefined
+        ? or(like(cards.title, `%${q.q}%`), like(cards.description, `%${q.q}%`))
+        : undefined;
 
     const tagMatch =
       q.tagId !== undefined
@@ -61,11 +63,19 @@ export const cardsRoute = new Hono()
     const input = c.req.valid('json');
 
     const result = db.transaction((tx) => {
-      const column = tx.select({ id: columns.id }).from(columns).where(eq(columns.id, input.columnId)).get();
+      const column = tx
+        .select({ id: columns.id })
+        .from(columns)
+        .where(eq(columns.id, input.columnId))
+        .get();
       if (!column) throw new HTTPException(404, { message: 'column not found' });
 
       const position = appendCardPosition(tx, input.columnId);
-      const [inserted] = tx.insert(cards).values({ ...input, position }).returning().all();
+      const [inserted] = tx
+        .insert(cards)
+        .values({ ...input, position })
+        .returning()
+        .all();
       return inserted;
     });
 
@@ -124,7 +134,12 @@ export const cardsRoute = new Hono()
         .get();
       if (!card) throw new HTTPException(404, { message: 'card not found' });
 
-      const position = computeCardPosition(tx, card.columnId, input.beforeCardId, input.afterCardId);
+      const position = computeCardPosition(
+        tx,
+        card.columnId,
+        input.beforeCardId,
+        input.afterCardId,
+      );
 
       const [updated] = tx
         .update(cards)
@@ -157,7 +172,12 @@ export const cardsRoute = new Hono()
         .get();
       if (!target) throw new HTTPException(404, { message: 'target column not found' });
 
-      const position = computeCardPosition(tx, input.toColumnId, input.beforeCardId, input.afterCardId);
+      const position = computeCardPosition(
+        tx,
+        input.toColumnId,
+        input.beforeCardId,
+        input.afterCardId,
+      );
 
       const [updated] = tx
         .update(cards)

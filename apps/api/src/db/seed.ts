@@ -14,11 +14,9 @@ export async function seed() {
   if ((row?.c ?? 0) > 0) return;
 
   db.transaction((tx) => {
-    const [board] = tx
-      .insert(boards)
-      .values({ name: 'Product Roadmap' })
-      .returning()
-      .all() as [Board];
+    const [board] = tx.insert(boards).values({ name: 'Product Roadmap' }).returning().all() as [
+      Board,
+    ];
 
     const [backlog, inProgress, inReview, done] = tx
       .insert(columns)

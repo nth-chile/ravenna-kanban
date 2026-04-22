@@ -2,6 +2,7 @@ import type { CardWithRelations } from '@ravenna/shared';
 
 type Props = {
   card: CardWithRelations;
+  onClick: () => void;
 };
 
 function snippet(text: string, max = 140): string {
@@ -10,22 +11,22 @@ function snippet(text: string, max = 140): string {
   return `${trimmed.slice(0, max).trimEnd()}…`;
 }
 
-export function Card({ card }: Props) {
+export function Card({ card, onClick }: Props) {
   const doneSubtasks = card.subtasks.filter((s) => s.done).length;
   const totalSubtasks = card.subtasks.length;
   const commentCount = card.comments.length;
   const description = card.description.trim();
 
   return (
-    <article className="rounded-lg border border-slate-200 bg-white p-3 shadow-sm transition hover:border-slate-300 hover:shadow">
-      <h3 className="text-sm font-medium leading-snug text-slate-900">
-        {card.title}
-      </h3>
+    <button
+      type="button"
+      onClick={onClick}
+      className="block w-full cursor-pointer rounded-lg border border-border bg-surface p-3 text-left shadow-sm transition hover:border-fg-muted/50 hover:shadow focus:outline-none focus:ring-2 focus:ring-accent"
+    >
+      <h3 className="text-sm font-medium leading-snug text-fg">{card.title}</h3>
 
       {description.length > 0 && (
-        <p className="mt-1 text-xs leading-relaxed text-slate-500">
-          {snippet(description)}
-        </p>
+        <p className="mt-1 text-xs leading-relaxed text-fg-muted">{snippet(description)}</p>
       )}
 
       {card.tags.length > 0 && (
@@ -33,7 +34,7 @@ export function Card({ card }: Props) {
           {card.tags.map((tag) => (
             <li
               key={tag.id}
-              className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-[11px] font-medium text-slate-700"
+              className="inline-flex items-center gap-1 rounded-full border border-border bg-bg/60 px-2 py-0.5 text-[11px] font-medium text-fg"
             >
               <span
                 aria-hidden="true"
@@ -47,7 +48,7 @@ export function Card({ card }: Props) {
       )}
 
       {(totalSubtasks > 0 || commentCount > 0) && (
-        <div className="mt-3 flex items-center gap-3 text-xs text-slate-500">
+        <div className="mt-3 flex items-center gap-3 text-xs text-fg-muted">
           {totalSubtasks > 0 && (
             <span
               className="inline-flex items-center gap-1"
@@ -90,6 +91,6 @@ export function Card({ card }: Props) {
           )}
         </div>
       )}
-    </article>
+    </button>
   );
 }

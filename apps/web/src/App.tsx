@@ -2,7 +2,7 @@ import { Board } from './components/Board.js';
 
 export function App() {
   return (
-    <main className="h-screen bg-slate-50 text-slate-900">
+    <main className="h-screen bg-bg text-fg">
       <Board />
     </main>
   );

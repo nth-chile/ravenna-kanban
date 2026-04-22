@@ -19,11 +19,19 @@ export const columnsRoute = new Hono()
     const input = c.req.valid('json');
 
     const result = db.transaction((tx) => {
-      const board = tx.select({ id: boards.id }).from(boards).where(eq(boards.id, input.boardId)).get();
+      const board = tx
+        .select({ id: boards.id })
+        .from(boards)
+        .where(eq(boards.id, input.boardId))
+        .get();
       if (!board) throw new HTTPException(404, { message: 'board not found' });
 
       const position = appendColumnPosition(tx, input.boardId);
-      const [inserted] = tx.insert(columns).values({ ...input, position }).returning().all();
+      const [inserted] = tx
+        .insert(columns)
+        .values({ ...input, position })
+        .returning()
+        .all();
       return inserted;
     });
 
@@ -55,8 +63,18 @@ export const columnsRoute = new Hono()
       const column = tx.select().from(columns).where(eq(columns.id, id)).get();
       if (!column) throw new HTTPException(404, { message: 'column not found' });
 
-      const position = computeColumnPosition(tx, column.boardId, input.beforeColumnId, input.afterColumnId);
-      const [updated] = tx.update(columns).set({ position }).where(eq(columns.id, id)).returning().all();
+      const position = computeColumnPosition(
+        tx,
+        column.boardId,
+        input.beforeColumnId,
+        input.afterColumnId,
+      );
+      const [updated] = tx
+        .update(columns)
+        .set({ position })
+        .where(eq(columns.id, id))
+        .returning()
+        .all();
       return updated;
     });
 

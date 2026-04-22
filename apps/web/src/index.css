@@ -1,3 +1,35 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+  :root {
+    /* Light palette — soft Stripe/Linear-inspired grays */
+    --bg: #f6f7f9;
+    --surface: #ffffff;
+    --border: #e5e7eb;
+    --fg: #0f172a;
+    --fg-muted: #64748b;
+    --accent: #6366f1;
+    --accent-fg: #ffffff;
+    --danger: #dc2626;
+  }
+
+  :root[data-theme="dark"] {
+    /* Dark palette — deep slates */
+    --bg: #0b1020;
+    --surface: #131a2e;
+    --border: #23304d;
+    --fg: #e6e9f2;
+    --fg-muted: #94a3b8;
+    --accent: #818cf8;
+    --accent-fg: #0b1020;
+    --danger: #f87171;
+  }
+
+  html,
+  body {
+    background-color: var(--bg);
+    color: var(--fg);
+  }
+}

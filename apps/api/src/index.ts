@@ -34,7 +34,10 @@ app.route('/api/cards', cardsRoute);
 app.route('/api/columns', columnsRoute);
 
 app.notFound((c) =>
-  c.json({ error: { code: 'NOT_FOUND', message: `No route for ${c.req.method} ${c.req.path}` } }, 404),
+  c.json(
+    { error: { code: 'NOT_FOUND', message: `No route for ${c.req.method} ${c.req.path}` } },
+    404,
+  ),
 );
 app.onError(errorHandler);
 
