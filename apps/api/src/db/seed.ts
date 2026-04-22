@@ -1,6 +1,8 @@
+import { schema } from '@ravenna/shared';
 import { count } from 'drizzle-orm';
 import { db } from './index.js';
-import { boards, cardTags, cards, columns, comments, subtasks, tags } from './schema.js';
+
+const { boards, cardTags, cards, columns, comments, subtasks, tags } = schema;
 
 type Board = typeof boards.$inferSelect;
 type Column = typeof columns.$inferSelect;

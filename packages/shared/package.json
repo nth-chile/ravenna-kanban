@@ -15,9 +15,12 @@
     "test": "echo 'no tests yet'"
   },
   "dependencies": {
+    "drizzle-orm": "^0.45.2",
+    "drizzle-zod": "^0.7.1",
     "zod": "^3.23.8"
   },
   "devDependencies": {
+    "@types/node": "^22.19.17",
     "typescript": "^5.7.2"
   }
 }

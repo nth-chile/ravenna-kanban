@@ -14,3 +14,6 @@ export const ErrorBodySchema = z.object({
   }),
 });
 export type ErrorBody = z.infer<typeof ErrorBodySchema>;
+
+export * from './api.js';
+export * as schema from './db/schema.js';

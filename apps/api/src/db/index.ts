@@ -3,7 +3,7 @@ import { dirname } from 'node:path';
 import Database from 'better-sqlite3';
 import { drizzle } from 'drizzle-orm/better-sqlite3';
 import { env } from '../env.js';
-import * as schema from './schema.js';
+import { schema } from '@ravenna/shared';
 
 mkdirSync(dirname(env.DATABASE_URL), { recursive: true });
 

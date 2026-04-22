@@ -1,11 +1,10 @@
-import { randomUUID } from 'node:crypto';
 import { relations } from 'drizzle-orm';
 import { integer, primaryKey, real, sqliteTable, text } from 'drizzle-orm/sqlite-core';
 
 const id = () =>
   text('id')
     .primaryKey()
-    .$defaultFn(() => randomUUID());
+    .$defaultFn(() => crypto.randomUUID());
 
 const createdAt = () =>
   integer('created_at', { mode: 'timestamp_ms' })
