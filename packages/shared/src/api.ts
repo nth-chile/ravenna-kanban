@@ -67,11 +67,15 @@ export type UpdateCardInput = z.infer<typeof UpdateCardInputSchema>;
 
 export const MoveCardInputSchema = z.object({
   toColumnId: z.string().uuid(),
-  position,
+  beforeCardId: z.string().uuid().nullish(),
+  afterCardId: z.string().uuid().nullish(),
 });
 export type MoveCardInput = z.infer<typeof MoveCardInputSchema>;
 
-export const ReorderCardInputSchema = z.object({ position });
+export const ReorderCardInputSchema = z.object({
+  beforeCardId: z.string().uuid().nullish(),
+  afterCardId: z.string().uuid().nullish(),
+});
 export type ReorderCardInput = z.infer<typeof ReorderCardInputSchema>;
 
 export const CreateColumnInputSchema = z.object({
