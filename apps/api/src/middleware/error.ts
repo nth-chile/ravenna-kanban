@@ -22,10 +22,18 @@ export const errorHandler: ErrorHandler = (err, c) => {
 
   if (err instanceof HTTPException) {
     logger.warn({ reqId, status: err.status, msg: err.message }, 'http exception');
+    const code =
+      err.status === 404
+        ? 'NOT_FOUND'
+        : err.status === 409
+          ? 'CONFLICT'
+          : err.status === 429
+            ? 'RATE_LIMITED'
+            : 'HTTP_ERROR';
     return c.json(
       {
         error: {
-          code: err.status === 404 ? 'NOT_FOUND' : 'HTTP_ERROR',
+          code,
           message: err.message,
         },
       },

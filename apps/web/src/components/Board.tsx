@@ -178,6 +178,9 @@ export function Board() {
       const targetCol = board.columns.find((c) => c.id === overColumnId);
       if (!targetCol) return;
 
+      const activeCard = board.columns.flatMap((c) => c.cards).find((c) => c.id === activeCardId);
+      const expectedUpdatedAt = activeCard?.updatedAt;
+
       if (overColumnId === activeColumnId) {
         const oldIdx = targetCol.cards.findIndex((c) => c.id === activeCardId);
         const newIdx = targetCol.cards.findIndex((c) => c.id === overCardId);
@@ -194,6 +197,7 @@ export function Board() {
           input: {
             beforeCardId: beforeCard?.id ?? null,
             afterCardId: afterCard?.id ?? null,
+            expectedUpdatedAt,
           },
         });
       } else {
@@ -214,6 +218,7 @@ export function Board() {
             toColumnId: overColumnId,
             beforeCardId: beforeCard?.id ?? null,
             afterCardId: afterCard?.id ?? null,
+            expectedUpdatedAt,
           },
         });
       }
@@ -222,12 +227,14 @@ export function Board() {
       if (!targetColumnId || targetColumnId === activeColumnId) return;
       const col = board.columns.find((c) => c.id === targetColumnId);
       const lastCard = col?.cards[col.cards.length - 1];
+      const activeCard = board.columns.flatMap((c) => c.cards).find((c) => c.id === activeCardId);
       moveCard.mutate({
         id: activeCardId,
         input: {
           toColumnId: targetColumnId,
           beforeCardId: lastCard?.id ?? null,
           afterCardId: null,
+          expectedUpdatedAt: activeCard?.updatedAt,
         },
       });
     }

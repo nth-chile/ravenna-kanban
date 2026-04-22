@@ -134,6 +134,17 @@ export const cardsRoute = new Hono()
         .get();
       if (!card) throw new HTTPException(404, { message: 'card not found' });
 
+      // Optimistic concurrency: if the client sent the card's updatedAt
+      // at drag-start and another write has bumped it since, reject so
+      // the client can refetch and retry. The client rolls back its
+      // optimistic state on 409.
+      if (
+        input.expectedUpdatedAt !== undefined &&
+        card.updatedAt.getTime() !== input.expectedUpdatedAt.getTime()
+      ) {
+        throw new HTTPException(409, { message: 'card was modified by another change' });
+      }
+
       const position = computeCardPosition(
         tx,
         card.columnId,
@@ -164,6 +175,13 @@ export const cardsRoute = new Hono()
         .where(and(eq(cards.id, id), isNull(cards.deletedAt)))
         .get();
       if (!card) throw new HTTPException(404, { message: 'card not found' });
+
+      if (
+        input.expectedUpdatedAt !== undefined &&
+        card.updatedAt.getTime() !== input.expectedUpdatedAt.getTime()
+      ) {
+        throw new HTTPException(409, { message: 'card was modified by another change' });
+      }
 
       const target = tx
         .select({ id: columns.id })

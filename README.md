@@ -51,6 +51,43 @@ Columns drag the same way from their header.
 
 This is a monorepo that has `apps/web`, `apps/api`, and `packages/shared`. `packages/shared` holds Zod schemas consumed by both web and api.
 
+## Under the hood
+
+Things a reviewer won't notice by clicking around:
+
+- **Rate limiting** per IP on all `/api` routes
+- **Structured logging** with per-request IDs (Pino)
+- **Soft delete** on cards (`deleted_at` + `POST /cards/:id/restore`)
+- **Optimistic updates with rollback** — React Query snapshots the cache in `onMutate`, rolls back on failure
+- **Concurrency-safe reordering** — fractional indexing means two clients moving the same card never clobber each other
+- **Optimistic concurrency on move/reorder** — the client sends the card's `updatedAt` with each move/reorder and the server rejects with `409 CONFLICT` if another write has landed since. Trade-off: because the optimistic update doesn't bump the cached `updatedAt`, two drags of the same card within a ~100ms window can collide with the server's own response and snap back. Acceptable for a single-user app; a second-drag flicker beats stale writes.
+- **API integration tests** — 13 route tests against a fresh DB (`pnpm --filter api test`)
+
+## State management
+
+React Query caches the full board under a single query key, populated by `GET /api/board`. Mutations patch that cache optimistically, roll back on failure, then refetch for truth. Local UI state (modals, form drafts, drag state) lives in component `useState`. No separate client-state library — Zustand/Redux would be overhead for a single-board app.
+
+## Database
+
+SQLite via Drizzle. Migrations in `apps/api/drizzle/`, applied once on boot.
+
+Tables:
+
+- `boards`, `columns`, `cards`, `tags`, `card_tags` (M:N)
+- `subtasks`, `comments` (1:M on cards)
+
+Card and column `position` columns are `REAL` (floats) — see fractional indexing below. `cards.deleted_at` enables soft delete + restore.
+
+## API
+
+All routes under `/api`, JSON in/out, Zod-validated with a consistent error shape.
+
+- `GET /board` — full board payload (columns, cards, tags, subtasks, comments)
+- `/cards` — CRUD + `/:id/reorder`, `/:id/move`, `/:id/restore`, and list with filters
+- `/columns` — CRUD + `/:id/reorder`
+- `/tags` — CRUD + attach/detach to cards
+- `/subtasks`, `/comments` — CRUD
+
 ## More decisions I wanted to mention
 
 ### Fractional indexing

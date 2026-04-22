@@ -145,6 +145,49 @@ describe('POST /api/cards/:id/reorder', () => {
   });
 });
 
+describe('optimistic concurrency control', () => {
+  async function loadCard(id: string) {
+    const board = await json<{
+      columns: Array<{ cards: Array<{ id: string; updatedAt: string }> }>;
+    }>(await app.fetch(req('/api/board')));
+    return board.columns.flatMap((c) => c.cards).find((c) => c.id === id);
+  }
+
+  it('reorder with stale expectedUpdatedAt returns 409 CONFLICT', async () => {
+    const card = await loadCard(fx.cardOneId);
+    if (!card) throw new Error('card not found');
+
+    // First reorder bumps updatedAt on the server
+    await app.fetch(
+      req(`/api/cards/${fx.cardOneId}/reorder`, body({ beforeCardId: fx.cardTwoId })),
+    );
+
+    // Second reorder with the now-stale updatedAt should conflict
+    const res = await app.fetch(
+      req(
+        `/api/cards/${fx.cardOneId}/reorder`,
+        body({ afterCardId: fx.cardTwoId, expectedUpdatedAt: card.updatedAt }),
+      ),
+    );
+    expect(res.status).toBe(409);
+    const err = await json<{ error: { code: string } }>(res);
+    expect(err.error.code).toBe('CONFLICT');
+  });
+
+  it('move with matching expectedUpdatedAt succeeds', async () => {
+    const card = await loadCard(fx.cardOneId);
+    if (!card) throw new Error('card not found');
+
+    const res = await app.fetch(
+      req(
+        `/api/cards/${fx.cardOneId}/move`,
+        body({ toColumnId: fx.columnBId, expectedUpdatedAt: card.updatedAt }),
+      ),
+    );
+    expect(res.status).toBe(200);
+  });
+});
+
 describe('filters', () => {
   it('GET /api/cards?tagId=... returns only cards with that tag', async () => {
     // Attach feature tag to card one
