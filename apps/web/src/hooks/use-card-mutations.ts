@@ -36,6 +36,14 @@ export function useDeleteCard() {
   });
 }
 
+export function useRestoreCard() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => api<Card>(`/cards/${id}/restore`, { method: 'POST' }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: boardQueryKey }),
+  });
+}
+
 function moveCardInBoard(
   board: BoardResponse,
   cardId: string,

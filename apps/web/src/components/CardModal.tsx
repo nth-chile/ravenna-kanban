@@ -1,7 +1,7 @@
 import type { CardWithRelations, Tag } from '@ravenna/shared';
 import { Plus, X } from 'lucide-react';
 import { useMemo, useState } from 'react';
-import { useDeleteCard, useUpdateCard } from '../hooks/use-card-mutations.js';
+import { useDeleteCard, useRestoreCard, useUpdateCard } from '../hooks/use-card-mutations.js';
 import { useCreateComment, useDeleteComment } from '../hooks/use-comment-mutations.js';
 import {
   useCreateSubtask,
@@ -10,6 +10,7 @@ import {
 } from '../hooks/use-subtask-mutations.js';
 import { useAttachTag, useDetachTag } from '../hooks/use-tag-mutations.js';
 import { formatApiError } from '../lib/format-error.js';
+import { toast } from '../lib/toast.js';
 import { Badge, badgeVariants } from './ui/badge.js';
 import { Button } from './ui/button.js';
 import { Checkbox } from './ui/checkbox.js';
@@ -59,6 +60,7 @@ export function CardModal({ card, allTags, onClose }: Props) {
 
   const update = useUpdateCard();
   const del = useDeleteCard();
+  const restore = useRestoreCard();
   const createSubtask = useCreateSubtask();
   const updateSubtask = useUpdateSubtask();
   const deleteSubtask = useDeleteSubtask();
@@ -105,6 +107,9 @@ export function CardModal({ card, allTags, onClose }: Props) {
     if (!confirm(`Delete "${card.title}"?`)) return;
     try {
       await del.mutateAsync(card.id);
+      const deletedId = card.id;
+      const deletedTitle = card.title;
+      toast(`Deleted "${deletedTitle}"`, () => restore.mutateAsync(deletedId));
       onClose();
     } catch {
       // error rendered from del.error in the footer
