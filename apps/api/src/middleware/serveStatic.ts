@@ -23,8 +23,10 @@ export const serveSpa = (root: string): MiddlewareHandler => {
     const assetResult = await assetServer(c, async () => undefined);
     if (assetResult instanceof Response) return assetResult;
 
-    // SPA fallback: only for GET. Serve index.html so client-side routes work.
-    if (c.req.method === 'GET') {
+    // SPA fallback: only for HTML navigation requests so /favicon.ico and
+    // other asset misses return a real 404 instead of the HTML shell.
+    const accept = c.req.header('accept') ?? '';
+    if (c.req.method === 'GET' && accept.includes('text/html')) {
       const fallbackResult = await indexFallback(c, async () => undefined);
       if (fallbackResult instanceof Response) return fallbackResult;
     }
