@@ -31,15 +31,23 @@ export function FilterBar({ tags, filter, onChange }: Props) {
   const active = isFilterActive(filter);
 
   return (
-    <div className="flex flex-wrap items-center gap-2 border-b border-border bg-surface px-6 py-2">
-      <div className="relative w-full sm:w-56">
-        <Input
-          type="search"
-          value={filter.q}
-          onChange={(e) => onChange({ ...filter, q: e.target.value })}
-          placeholder="Search cards…"
-          aria-label="Search cards"
-        />
+    <div className="flex flex-col gap-2 border-b border-border bg-surface px-6 py-2">
+      <div className="flex items-center gap-2">
+        <div className="relative w-full sm:w-56">
+          <Input
+            type="search"
+            value={filter.q}
+            onChange={(e) => onChange({ ...filter, q: e.target.value })}
+            placeholder="Search cards…"
+            aria-label="Search cards"
+          />
+        </div>
+
+        {active && (
+          <Button variant="ghost" onClick={() => onChange(emptyFilter)} className="ml-auto">
+            Clear
+          </Button>
+        )}
       </div>
 
       {tags.length > 0 && (
@@ -68,12 +76,6 @@ export function FilterBar({ tags, filter, onChange }: Props) {
             );
           })}
         </ul>
-      )}
-
-      {active && (
-        <Button variant="ghost" size="sm" onClick={() => onChange(emptyFilter)} className="ml-auto">
-          Clear
-        </Button>
       )}
     </div>
   );

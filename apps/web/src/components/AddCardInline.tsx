@@ -1,6 +1,7 @@
 import { Plus } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useCreateCard } from '../hooks/use-card-mutations.js';
+import { formatApiError } from '../lib/format-error.js';
 import { Button } from './ui/button.js';
 import { Input } from './ui/input.js';
 
@@ -18,9 +19,13 @@ export function AddCardInline({ columnId }: { columnId: string }) {
     e.preventDefault();
     const trimmed = title.trim();
     if (!trimmed) return;
-    await create.mutateAsync({ columnId, title: trimmed });
-    setTitle('');
-    setOpen(false);
+    try {
+      await create.mutateAsync({ columnId, title: trimmed });
+      setTitle('');
+      setOpen(false);
+    } catch {
+      // error rendered from create.error below
+    }
   }
 
   if (!open) {
@@ -28,7 +33,7 @@ export function AddCardInline({ columnId }: { columnId: string }) {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="flex w-full items-center justify-center gap-1 rounded border border-dashed border-border px-3 py-2 text-sm text-fg-muted transition hover:border-fg-muted hover:text-fg focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+        className="flex w-full items-center justify-center gap-1 rounded-md border border-dashed border-border px-3 py-2 text-sm text-fg-muted transition hover:border-fg-muted hover:text-fg focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
       >
         <Plus className="h-3.5 w-3.5" /> Add card
       </button>
@@ -40,26 +45,36 @@ export function AddCardInline({ columnId }: { columnId: string }) {
       <Input
         ref={inputRef}
         value={title}
-        onChange={(e) => setTitle(e.target.value)}
+        onChange={(e) => {
+          setTitle(e.target.value);
+          if (create.isError) create.reset();
+        }}
         onKeyDown={(e) => {
           if (e.key === 'Escape') {
             setOpen(false);
             setTitle('');
+            create.reset();
           }
         }}
         placeholder="Card title"
+        aria-invalid={create.isError || undefined}
       />
+      {create.isError && (
+        <p role="alert" className="text-xs text-danger">
+          {formatApiError(create.error, 'Failed to add card')}
+        </p>
+      )}
       <div className="flex gap-2">
-        <Button type="submit" size="sm" disabled={create.isPending || !title.trim()}>
+        <Button type="submit" disabled={create.isPending || !title.trim()}>
           {create.isPending ? 'Adding…' : 'Add'}
         </Button>
         <Button
           type="button"
           variant="ghost"
-          size="sm"
           onClick={() => {
             setOpen(false);
             setTitle('');
+            create.reset();
           }}
         >
           Cancel

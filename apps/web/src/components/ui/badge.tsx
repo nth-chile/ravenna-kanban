@@ -10,7 +10,7 @@ const badgeVariants = cva(
         default: 'border-border bg-bg/60 text-fg',
         outline: 'border-border bg-surface text-fg-muted',
         muted: 'border-transparent bg-bg text-fg-muted',
-        accent: 'border-accent/50 bg-accent/10 text-fg',
+        accent: 'border-accent bg-accent/20 text-fg',
       },
       interactive: {
         true: 'cursor-pointer hover:text-fg focus:outline-none focus-visible:ring-2 focus-visible:ring-accent',

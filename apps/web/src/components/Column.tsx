@@ -17,7 +17,7 @@ export function Column({ column, onSelectCard, readOnly = false }: Props) {
   if (readOnly) {
     return (
       <section
-        className="flex h-full w-[85vw] max-w-[22rem] shrink-0 snap-start flex-col rounded-xl border border-border bg-bg/60 sm:w-72 sm:max-w-none"
+        className="flex h-full w-[85vw] max-w-[22rem] shrink-0 snap-start flex-col rounded-md border border-border bg-bg/60 sm:w-72 sm:max-w-none"
         aria-label={`Column ${column.name}`}
       >
         <header className="flex items-center justify-between px-3 pt-3 pb-2">
@@ -67,7 +67,7 @@ function SortableColumn({
     <section
       ref={setNodeRef}
       style={style}
-      className={`flex h-full w-[85vw] max-w-[22rem] shrink-0 snap-start flex-col rounded-xl border bg-bg/60 transition-colors sm:w-72 sm:max-w-none ${
+      className={`flex h-full w-[85vw] max-w-[22rem] shrink-0 snap-start flex-col rounded-md border bg-bg/60 transition-colors sm:w-72 sm:max-w-none ${
         isOver ? 'border-accent/50' : 'border-border'
       }`}
       aria-label={`Column ${column.name}`}
@@ -75,7 +75,7 @@ function SortableColumn({
       <header
         {...attributes}
         {...listeners}
-        className="flex cursor-grab items-center justify-between px-3 pt-3 pb-2 active:cursor-grabbing"
+        className="flex cursor-grab items-center justify-between rounded-t-md px-3 pt-3 pb-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent active:cursor-grabbing"
       >
         <h2 className="text-sm font-semibold text-fg">{column.name}</h2>
         <Badge

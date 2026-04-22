@@ -32,7 +32,7 @@ export const DialogContent = forwardRef<
     <DialogPrimitive.Content
       ref={ref}
       className={cn(
-        'fixed left-1/2 top-1/2 z-50 flex max-h-[90vh] w-full max-w-lg -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-lg border border-border bg-surface p-6 text-fg shadow-xl data-[state=open]:animate-zoom-in data-[state=closed]:animate-zoom-out',
+        'fixed left-1/2 top-1/2 z-50 flex max-h-[90vh] w-full max-w-lg -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-md border border-border bg-surface p-6 text-fg shadow-xl data-[state=open]:animate-zoom-in data-[state=closed]:animate-zoom-out',
         className,
       )}
       {...props}

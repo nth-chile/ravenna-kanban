@@ -53,7 +53,17 @@ Deferred (see Roadmap):
 
 ## Accessibility
 
-dnd-kit gives us keyboard drag (Tab to card, Space to grab, arrows to move, Esc to cancel). Dialogs and popovers use Radix primitives for focus trap + ARIA. Color contrast stays WCAG-AA in both themes.
+Dialogs and popovers use Radix primitives for focus trap + ARIA. Color contrast stays WCAG-AA in both themes.
+
+**Drag a card with the keyboard:**
+
+1. `Tab` until a card has a visible focus ring.
+2. `Space` to pick it up.
+3. `↑ ↓` to move within the column, `← →` to move to an adjacent column.
+4. `Space` (or `Enter`) to drop.
+5. `Esc` at any time to cancel.
+
+Columns drag the same way from their header.
 
 ## pnpm workspaces
 

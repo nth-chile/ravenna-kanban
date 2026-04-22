@@ -1,6 +1,8 @@
 import {
   DndContext,
   type DragEndEvent,
+  DragOverlay,
+  type DragStartEvent,
   KeyboardSensor,
   PointerSensor,
   closestCorners,
@@ -12,12 +14,13 @@ import {
   horizontalListSortingStrategy,
   sortableKeyboardCoordinates,
 } from '@dnd-kit/sortable';
-import type { BoardResponse, ColumnWithCards } from '@ravenna/shared';
+import type { BoardResponse, CardWithRelations, ColumnWithCards } from '@ravenna/shared';
 import { useMemo, useState } from 'react';
 import { useBoard } from '../hooks/use-board.js';
 import { useMoveCard, useReorderCard } from '../hooks/use-card-mutations.js';
 import { useReorderColumn } from '../hooks/use-column-mutations.js';
 import { ApiError } from '../lib/api.js';
+import { Card } from './Card.js';
 import { CardModal } from './CardModal.js';
 import { Column } from './Column.js';
 import { type Filter, FilterBar, emptyFilter } from './FilterBar.js';
@@ -73,13 +76,21 @@ export function Board() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [filter, setFilter] = useState<Filter>(emptyFilter);
   const [groupBy, setGroupBy] = useState<GroupBy>('none');
+  const [activeCard, setActiveCard] = useState<CardWithRelations | null>(null);
   const reorderCard = useReorderCard();
   const moveCard = useMoveCard();
   const reorderColumn = useReorderColumn();
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
-    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+      keyboardCodes: {
+        start: ['Space'],
+        cancel: ['Escape'],
+        end: ['Space', 'Enter'],
+      },
+    }),
   );
 
   const visible = useMemo(() => (data ? applyFilter(data, filter) : null), [data, filter]);
@@ -101,7 +112,7 @@ export function Board() {
           : 'Unknown error';
     return (
       <div className="flex h-full items-center justify-center p-12">
-        <div className="max-w-sm rounded-lg border border-danger/40 bg-surface p-4 text-center">
+        <div className="max-w-sm rounded-md border border-danger/40 bg-surface p-4 text-center">
           <p className="text-sm font-medium text-danger">Couldn’t load board</p>
           <p className="mt-1 text-xs text-fg-muted">{message}</p>
           <button
@@ -122,7 +133,19 @@ export function Board() {
     ? (data.columns.flatMap((c) => c.cards).find((c) => c.id === selectedId) ?? null)
     : null;
 
+  function handleDragStart(event: DragStartEvent) {
+    const { active } = event;
+    const activeData = active.data.current as { type?: string } | undefined;
+    if (activeData?.type !== 'card') {
+      setActiveCard(null);
+      return;
+    }
+    const card = data?.columns.flatMap((c) => c.cards).find((c) => c.id === String(active.id));
+    setActiveCard(card ?? null);
+  }
+
   function handleDragEnd(event: DragEndEvent) {
+    setActiveCard(null);
     const { active, over } = event;
     if (!over || active.id === over.id) return;
 
@@ -137,13 +160,24 @@ export function Board() {
       const overColumnId = overType === 'column' ? String(over.id) : (overData?.columnId ?? null);
       if (!overColumnId || overColumnId === String(active.id)) return;
 
-      const oldIdx = board.columns.findIndex((c) => c.id === String(active.id));
+      const activeId = String(active.id);
+      const oldIdx = board.columns.findIndex((c) => c.id === activeId);
       const newIdx = board.columns.findIndex((c) => c.id === overColumnId);
       if (oldIdx === -1 || newIdx === -1) return;
 
+      // Remove the dragged column and compute the gap we're inserting into
+      const remaining = board.columns.filter((c) => c.id !== activeId);
+      const targetIdx = remaining.findIndex((c) => c.id === overColumnId);
+      const insertIdx = oldIdx < newIdx ? targetIdx + 1 : targetIdx;
+      const beforeCol = remaining[insertIdx - 1];
+      const afterCol = remaining[insertIdx];
+
       reorderColumn.mutate({
-        id: String(active.id),
-        input: oldIdx < newIdx ? { beforeColumnId: overColumnId } : { afterColumnId: overColumnId },
+        id: activeId,
+        input: {
+          beforeColumnId: beforeCol?.id ?? null,
+          afterColumnId: afterCol?.id ?? null,
+        },
       });
       return;
     }
@@ -158,21 +192,46 @@ export function Board() {
       const overColumnId = overData.columnId;
       if (!overColumnId) return;
 
+      const targetCol = board.columns.find((c) => c.id === overColumnId);
+      if (!targetCol) return;
+
       if (overColumnId === activeColumnId) {
-        const col = board.columns.find((c) => c.id === activeColumnId);
-        if (!col) return;
-        const oldIdx = col.cards.findIndex((c) => c.id === activeCardId);
-        const newIdx = col.cards.findIndex((c) => c.id === overCardId);
+        const oldIdx = targetCol.cards.findIndex((c) => c.id === activeCardId);
+        const newIdx = targetCol.cards.findIndex((c) => c.id === overCardId);
         if (oldIdx === -1 || newIdx === -1) return;
+
+        const remaining = targetCol.cards.filter((c) => c.id !== activeCardId);
+        const targetIdx = remaining.findIndex((c) => c.id === overCardId);
+        const insertIdx = oldIdx < newIdx ? targetIdx + 1 : targetIdx;
+        const beforeCard = remaining[insertIdx - 1];
+        const afterCard = remaining[insertIdx];
 
         reorderCard.mutate({
           id: activeCardId,
-          input: oldIdx < newIdx ? { beforeCardId: overCardId } : { afterCardId: overCardId },
+          input: {
+            beforeCardId: beforeCard?.id ?? null,
+            afterCardId: afterCard?.id ?? null,
+          },
         });
       } else {
+        const activeRect = active.rect.current.translated;
+        const overRect = over.rect;
+        const activeCenter = activeRect ? activeRect.top + activeRect.height / 2 : 0;
+        const overCenter = overRect.top + overRect.height / 2;
+        const dropBelow = activeCenter > overCenter;
+
+        const targetIdx = targetCol.cards.findIndex((c) => c.id === overCardId);
+        const insertIdx = dropBelow ? targetIdx + 1 : targetIdx;
+        const beforeCard = targetCol.cards[insertIdx - 1];
+        const afterCard = targetCol.cards[insertIdx];
+
         moveCard.mutate({
           id: activeCardId,
-          input: { toColumnId: overColumnId, afterCardId: overCardId },
+          input: {
+            toColumnId: overColumnId,
+            beforeCardId: beforeCard?.id ?? null,
+            afterCardId: afterCard?.id ?? null,
+          },
         });
       }
     } else if (overData?.type === 'column') {
@@ -182,7 +241,11 @@ export function Board() {
       const lastCard = col?.cards[col.cards.length - 1];
       moveCard.mutate({
         id: activeCardId,
-        input: { toColumnId: targetColumnId, beforeCardId: lastCard?.id ?? null },
+        input: {
+          toColumnId: targetColumnId,
+          beforeCardId: lastCard?.id ?? null,
+          afterCardId: null,
+        },
       });
     }
   }
@@ -191,16 +254,15 @@ export function Board() {
 
   return (
     <div className="flex h-full flex-col">
-      <header className="flex items-center justify-between border-b border-border bg-surface px-6 py-3">
-        <div>
-          <h1 className="text-base font-semibold text-fg">{data.name}</h1>
+      <header className="flex items-center justify-between gap-3 border-b border-border bg-surface px-4 py-3 sm:px-6">
+        <div className="min-w-0 flex-1">
+          <h1 className="truncate text-base font-semibold text-fg">{data.name}</h1>
           <p className="text-xs text-fg-muted">
             {columns.length} column{columns.length === 1 ? '' : 's'}
-            {grouped ? ' · grouped' : ''}
             {isFetching ? ' · refreshing…' : ''}
           </p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex shrink-0 items-center gap-2 sm:gap-3">
           <GroupBySelect value={groupBy} onChange={setGroupBy} />
           <ThemeToggle />
         </div>
@@ -213,7 +275,7 @@ export function Board() {
           <p className="text-sm text-fg-muted">This board has no columns yet.</p>
         </div>
       ) : grouped ? (
-        <div className="flex-1 overflow-x-auto">
+        <div className="flex-1 snap-x snap-mandatory overflow-x-auto scroll-pl-6 sm:snap-none sm:scroll-pl-0">
           <div className="flex h-full min-w-max items-start gap-4 p-6">
             {columns.map((column) => (
               <Column
@@ -226,12 +288,18 @@ export function Board() {
           </div>
         </div>
       ) : (
-        <DndContext sensors={sensors} collisionDetection={closestCorners} onDragEnd={handleDragEnd}>
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCorners}
+          onDragStart={handleDragStart}
+          onDragEnd={handleDragEnd}
+          onDragCancel={() => setActiveCard(null)}
+        >
           <SortableContext
             items={columns.map((c) => c.id)}
             strategy={horizontalListSortingStrategy}
           >
-            <div className="flex-1 overflow-x-auto">
+            <div className="flex-1 snap-x snap-mandatory overflow-x-auto scroll-pl-6 sm:snap-none sm:scroll-pl-0">
               <div className="flex h-full min-w-max items-start gap-4 p-6">
                 {columns.map((column) => (
                   <Column
@@ -243,11 +311,29 @@ export function Board() {
               </div>
             </div>
           </SortableContext>
+          <DragOverlay dropAnimation={null}>
+            {activeCard ? (
+              <div className="rotate-2">
+                <Card card={activeCard} onClick={() => undefined} readOnly />
+              </div>
+            ) : null}
+          </DragOverlay>
         </DndContext>
       )}
 
       {selected && (
-        <CardModal card={selected} allTags={data.tags} onClose={() => setSelectedId(null)} />
+        <CardModal
+          card={selected}
+          allTags={data.tags}
+          onClose={() => {
+            const id = selected.id;
+            setSelectedId(null);
+            requestAnimationFrame(() => {
+              const btn = document.querySelector<HTMLButtonElement>(`[data-card-id="${id}"]`);
+              btn?.focus();
+            });
+          }}
+        />
       )}
     </div>
   );

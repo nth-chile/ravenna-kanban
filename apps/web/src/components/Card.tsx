@@ -27,7 +27,8 @@ export function Card({ card, onClick, readOnly = false }: Props) {
       <button
         type="button"
         onClick={onClick}
-        className="block w-full rounded-lg border border-border bg-surface p-3 text-left shadow-sm transition hover:border-fg-muted/50 hover:shadow focus:outline-none focus:ring-2 focus:ring-accent"
+        data-card-id={card.id}
+        className="block w-full rounded-md border border-border bg-surface p-3 text-left shadow-sm transition hover:border-fg-muted/50 hover:shadow focus:outline-none focus:ring-2 focus:ring-inset focus:ring-accent"
       >
         <CardBody
           card={card}
@@ -86,7 +87,8 @@ function SortableCard({
       {...listeners}
       type="button"
       onClick={onClick}
-      className="block w-full cursor-grab touch-none rounded-lg border border-border bg-surface p-3 text-left shadow-sm transition hover:border-fg-muted/50 hover:shadow focus:outline-none focus:ring-2 focus:ring-accent active:cursor-grabbing"
+      data-card-id={card.id}
+      className="block w-full cursor-grab touch-none rounded-md border border-border bg-surface p-3 text-left shadow-sm transition hover:border-fg-muted/50 hover:shadow focus:outline-none focus:ring-2 focus:ring-inset focus:ring-accent active:cursor-grabbing"
     >
       <CardBody
         card={card}

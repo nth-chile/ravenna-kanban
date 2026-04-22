@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { cn } from '../lib/utils.js';
 
 type Theme = 'light' | 'dark';
 
@@ -40,42 +41,52 @@ export function ThemeToggle() {
   return (
     <button
       type="button"
+      role="switch"
+      aria-checked={isDark}
       onClick={() => setTheme(isDark ? 'light' : 'dark')}
       aria-label={`Switch to ${isDark ? 'light' : 'dark'} mode`}
       title={`Switch to ${isDark ? 'light' : 'dark'} mode`}
-      className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-border bg-surface text-fg-muted transition hover:text-fg hover:border-fg-muted"
+      className="relative inline-flex h-8 w-14 shrink-0 items-center rounded-full border border-border bg-surface transition-colors hover:border-fg-muted focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
     >
-      {isDark ? (
-        <svg
-          aria-hidden="true"
-          viewBox="0 0 20 20"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="1.5"
-          className="h-4 w-4"
-        >
-          <circle cx="10" cy="10" r="3.5" />
-          <path
-            strokeLinecap="round"
-            d="M10 2v2M10 16v2M2 10h2M16 10h2M4.2 4.2l1.4 1.4M14.4 14.4l1.4 1.4M4.2 15.8l1.4-1.4M14.4 5.6l1.4-1.4"
-          />
-        </svg>
-      ) : (
-        <svg
-          aria-hidden="true"
-          viewBox="0 0 20 20"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="1.5"
-          className="h-4 w-4"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            d="M15.5 12.5A6 6 0 0 1 7.5 4.5a6 6 0 1 0 8 8Z"
-          />
-        </svg>
-      )}
+      <span
+        aria-hidden="true"
+        className={cn(
+          'inline-flex h-6 w-6 items-center justify-center rounded-full bg-bg text-fg shadow-sm transition-transform',
+          isDark ? 'translate-x-7' : 'translate-x-1',
+        )}
+      >
+        {isDark ? (
+          <svg
+            aria-hidden="true"
+            viewBox="0 0 20 20"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.5"
+            className="h-3.5 w-3.5"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M15.5 12.5A6 6 0 0 1 7.5 4.5a6 6 0 1 0 8 8Z"
+            />
+          </svg>
+        ) : (
+          <svg
+            aria-hidden="true"
+            viewBox="0 0 20 20"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.5"
+            className="h-3.5 w-3.5"
+          >
+            <circle cx="10" cy="10" r="3.5" />
+            <path
+              strokeLinecap="round"
+              d="M10 2v2M10 16v2M2 10h2M16 10h2M4.2 4.2l1.4 1.4M14.4 14.4l1.4 1.4M4.2 15.8l1.4-1.4M14.4 5.6l1.4-1.4"
+            />
+          </svg>
+        )}
+      </span>
     </button>
   );
 }

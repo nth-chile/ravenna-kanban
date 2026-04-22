@@ -9,6 +9,7 @@ import {
   useUpdateSubtask,
 } from '../hooks/use-subtask-mutations.js';
 import { useAttachTag, useDetachTag } from '../hooks/use-tag-mutations.js';
+import { formatApiError } from '../lib/format-error.js';
 import { Badge, badgeVariants } from './ui/badge.js';
 import { Button } from './ui/button.js';
 import { Checkbox } from './ui/checkbox.js';
@@ -85,14 +86,22 @@ export function CardModal({ card, allTags, onClose }: Props) {
       return;
     }
 
-    await update.mutateAsync({ id: card.id, input });
-    onClose();
+    try {
+      await update.mutateAsync({ id: card.id, input });
+      onClose();
+    } catch {
+      // error rendered from update.error in the footer
+    }
   }
 
   async function onDelete() {
     if (!confirm(`Delete "${card.title}"?`)) return;
-    await del.mutateAsync(card.id);
-    onClose();
+    try {
+      await del.mutateAsync(card.id);
+      onClose();
+    } catch {
+      // error rendered from del.error in the footer
+    }
   }
 
   async function onAddSubtask(e: React.FormEvent) {
@@ -131,8 +140,12 @@ export function CardModal({ card, allTags, onClose }: Props) {
           <Input
             id="card-modal-title-input"
             value={title}
-            onChange={(e) => setTitle(e.target.value)}
+            onChange={(e) => {
+              setTitle(e.target.value);
+              if (update.isError) update.reset();
+            }}
             className="h-9 text-base font-medium"
+            aria-invalid={update.isError || undefined}
           />
         </div>
 
@@ -146,8 +159,12 @@ export function CardModal({ card, allTags, onClose }: Props) {
           <Textarea
             id="card-modal-description-input"
             value={description}
-            onChange={(e) => setDescription(e.target.value)}
+            onChange={(e) => {
+              setDescription(e.target.value);
+              if (update.isError) update.reset();
+            }}
             rows={5}
+            aria-invalid={update.isError || undefined}
           />
         </div>
 
@@ -192,12 +209,10 @@ export function CardModal({ card, allTags, onClose }: Props) {
               value={newSubtask}
               onChange={(e) => setNewSubtask(e.target.value)}
               placeholder="Add subtask"
-              className="h-8"
             />
             <Button
               type="submit"
               variant="secondary"
-              size="sm"
               disabled={!newSubtask.trim() || createSubtask.isPending}
             >
               Add
@@ -239,7 +254,7 @@ export function CardModal({ card, allTags, onClose }: Props) {
                       key={tag.id}
                       type="button"
                       onClick={() => attachTag.mutate({ cardId: card.id, tagId: tag.id })}
-                      className="flex w-full items-center gap-2 rounded px-2 py-1 text-left text-xs text-fg hover:bg-bg"
+                      className="flex w-full items-center gap-2 rounded-sm px-2 py-1 text-left text-xs text-fg hover:bg-bg"
                     >
                       <span
                         aria-hidden="true"
@@ -266,7 +281,7 @@ export function CardModal({ card, allTags, onClose }: Props) {
             {card.comments.map((comment) => (
               <li
                 key={comment.id}
-                className="group rounded border border-border bg-bg/40 p-2 text-sm"
+                className="group rounded-md border border-border bg-bg/40 p-2 text-sm"
               >
                 <div className="flex items-start justify-between gap-2">
                   <p className="whitespace-pre-wrap break-words text-fg">{comment.body}</p>
@@ -301,7 +316,6 @@ export function CardModal({ card, allTags, onClose }: Props) {
               <Button
                 type="submit"
                 variant="secondary"
-                size="sm"
                 disabled={!newComment.trim() || createComment.isPending}
               >
                 {createComment.isPending ? 'Posting…' : 'Post'}
@@ -309,6 +323,12 @@ export function CardModal({ card, allTags, onClose }: Props) {
             </div>
           </form>
         </section>
+
+        {(update.isError || del.isError) && (
+          <p role="alert" className="mt-4 text-xs text-danger">
+            {formatApiError(update.error ?? del.error, 'Save failed')}
+          </p>
+        )}
 
         <DialogFooter className="border-t border-border pt-4">
           <Button variant="danger" onClick={onDelete} disabled={del.isPending}>
